@@ -43,17 +43,14 @@ jobs:
 
       - name: Build APK
         run: |
-          # Flet build requires the app to be in a flat directory or correctly pointed
-          # Based on current structure, app is in .github/workflows/app.py
-          # Moving to a temporary project root for build if necessary
           mkdir -p build_dir
           cp .github/workflows/*.py build_dir/
-          # If service_account.json is required at build time (e.g. bundled assets)
           if [ -f .github/workflows/service_account.json ]; then
             cp .github/workflows/service_account.json build_dir/
           fi
           cd build_dir
-          flet build apk --project "MemberApp"
+          # Ensure flet is available and run build
+          python -m flet build apk --project "MemberApp" --verbose
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
