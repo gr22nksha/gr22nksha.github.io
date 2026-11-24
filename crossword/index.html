@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chae's Daily Crossword</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+  :root{ --ink:#1a1a1a; --paper:#fdfcf8; --line:#222; --hl:#ffe9a8; --hl2:#ffd34d; --ok:#2e7d32; --bad:#c62828; --rev:#6a1b9a; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--paper); color:var(--ink); font-family:"Pretendard Variable",Pretendard,-apple-system,"Malgun Gothic",sans-serif; }
+  header{ text-align:center; padding:18px 12px 8px; border-bottom:3px double var(--line); }
+  header h1{ margin:0; font-size:clamp(22px,5vw,34px); letter-spacing:.5px; }
+  header p{ margin:4px 0 8px; color:#555; font-size:13px; }
+  .wrap{ max-width:1060px; margin:0 auto; padding:14px; }
+  .picker{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:center; margin-bottom:6px; }
+  .picker select{ font-size:15px; padding:7px 10px; max-width:92vw; }
+  .picker button, .tools button{ font-size:14px; padding:7px 12px; border:1.5px solid var(--line); background:#fff; border-radius:6px; cursor:pointer; }
+  .picker button:hover, .tools button:hover{ background:#f0ead8; }
+  .meta{ text-align:center; color:#444; font-size:14px; margin:4px 0 12px; }
+  .meta b{ color:var(--ink); }
+  .main{ display:flex; gap:22px; flex-wrap:wrap; justify-content:center; align-items:flex-start; }
+  .gridbox{ width:min(94vw,540px); }
+  .grid{ display:grid; grid-template-columns:repeat(15,1fr); border:2px solid var(--line); background:var(--line); gap:1px; user-select:none; }
+  .cell{ background:#fff; aspect-ratio:1/1; position:relative; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .cell.black{ background:#222; cursor:default; }
+  .cell .num{ position:absolute; top:0; left:2px; font-size:clamp(7px,1.6vw,10px); line-height:1.2; color:#333; }
+  .cell .ch{ font-size:clamp(11px,3.2vw,21px); font-weight:600; }
+  .cell.hl{ background:var(--hl); }
+  .cell.cur{ background:var(--hl2); }
+  .cell.ok .ch{ color:var(--ok); }
+  .cell.bad{ background:#fbe4e4; }
+  .cell.bad .ch{ color:var(--bad); }
+  .cell.rev .ch{ color:var(--rev); }
+  .entrybox{ margin-top:12px; border:1.5px solid var(--line); border-radius:8px; padding:10px 12px; background:#fff; }
+  .entrybox .eclue{ font-size:14px; margin-bottom:8px; min-height:20px; }
+  .entrybox input{ width:100%; font-size:20px; padding:9px 10px; border:1.5px solid #999; border-radius:6px; letter-spacing:2px; }
+  .tools{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; justify-content:center; }
+  .banner{ display:none; margin-top:12px; text-align:center; font-size:17px; font-weight:700; color:var(--ok); }
+  .clues{ width:min(94vw,400px); display:flex; gap:18px; }
+  .clues .col{ flex:1; }
+  .clues h3{ margin:2px 0 8px; font-size:16px; border-bottom:2px solid var(--line); padding-bottom:4px; }
+  .clue{ font-size:13.5px; padding:5px 6px; border-radius:5px; cursor:pointer; line-height:1.45; }
+  .clue:hover{ background:#f3efdf; }
+  .clue.sel{ background:var(--hl); }
+  .clue b{ margin-right:4px; }
+  footer{ text-align:center; color:#888; font-size:12px; padding:16px 0 26px; }
+  @media (max-width:760px){ .clues{ flex-direction:column; gap:6px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Chae's Daily Crossword</h1>
+  <p>A daily crossword — social housing, AI, automation, and everyday words</p>
+</header>
+<div class="wrap">
+  <div class="picker">
+    <button id="prevBtn" type="button">◀</button>
+    <select id="picker"></select>
+    <button id="nextBtn" type="button">▶</button>
+  </div>
+  <div class="meta" id="meta"></div>
+  <div class="main">
+    <div class="gridbox">
+      <div class="grid" id="grid"></div>
+      <div class="entrybox">
+        <div class="eclue" id="eclue"></div>
+        <input id="entry" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Type the word here">
+      </div>
+      <div class="tools">
+        <button id="checkBtn" type="button">Check</button>
+        <button id="revLetterBtn" type="button">Reveal letter</button>
+        <button id="revWordBtn" type="button">Reveal word</button>
+        <button id="revAllBtn" type="button">Reveal all</button>
+        <button id="clearBtn" type="button">Clear</button>
+      </div>
+      <div class="banner" id="banner">🎉 Puzzle complete — well done!</div>
+    </div>
+    <div class="clues">
+      <div class="col"><h3>Across</h3><div id="cluesA"></div></div>
+      <div class="col"><h3>Down</h3><div id="cluesD"></div></div>
+    </div>
+  </div>
+</div>
+<footer>Static archive edition · Puzzles No. 1–9 · Progress is saved in this browser only</footer>
+<script>
+const PUZZLES = [{"date": "2026-11-15", "no": 1, "level": "medium", "theme_line": "Home Is Where the Bot Is", "words": [{"w": "BRIDGE", "r": 0, "c": 0, "d": "A", "clue": "Contract game for four players"}, {"w": "NEURAL", "r": 2, "c": 1, "d": "A", "clue": "Brain-inspired, in computing: ___ network"}, {"w": "SEOUL", "r": 3, "c": 10, "d": "A", "clue": "Capital crossed by the Han River"}, {"w": "TENANT", "r": 5, "c": 0, "d": "A", "clue": "Rent payer"}, {"w": "SOCIALHOUSING", "r": 7, "c": 1, "d": "A", "clue": "Affordable homes run for public benefit, not profit"}, {"w": "ROBOT", "r": 10, "c": 10, "d": "A", "clue": "Warehouse worker that never takes a break?"}, {"w": "MARKET", "r": 11, "c": 0, "d": "A", "clue": "Where stalls, prices and Saturday crowds meet"}, {"w": "GARDEN", "r": 0, "c": 4, "d": "D", "clue": "Plot that grows on you?"}, {"w": "HOUSING", "r": 1, "c": 13, "d": "D", "clue": "Roof-over-heads issue in every election"}, {"w": "LEASE", "r": 4, "c": 1, "d": "D", "clue": "Tenancy agreement in writing"}, {"w": "POLICY", "r": 6, "c": 8, "d": "D", "clue": "Government plan, or an insurance contract"}, {"w": "WINDOW", "r": 6, "c": 11, "d": "D", "clue": "It lets the light in but keeps the rain out"}, {"w": "AGENT", "r": 7, "c": 5, "d": "D", "clue": "One who acts for another — lately, a program that acts on its own?"}, {"w": "SCRIPT", "r": 9, "c": 2, "d": "D", "clue": "Code that runs the same chores every time"}, {"w": "COFFEE", "r": 9, "c": 13, "d": "D", "clue": "Morning cup that fuels the solving"}]}, {"date": "2026-11-16", "no": 2, "level": "easy", "theme_line": "Helping Hands — Human and Machine", "words": [{"w": "AUTOMATION", "r": 0, "c": 0, "d": "A", "clue": "Work done by machines instead of people"}, {"w": "TOP", "r": 0, "c": 6, "d": "D", "clue": "The highest part of something"}, {"w": "COOPERATIVE", "r": 2, "c": 3, "d": "A", "clue": "Owned and run by its members for their shared benefit"}, {"w": "OUR", "r": 2, "c": 5, "d": "D", "clue": "Belonging to us"}, {"w": "WELFARE", "r": 4, "c": 0, "d": "A", "clue": "Help and support for people in need"}, {"w": "EMU", "r": 4, "c": 6, "d": "D", "clue": "Flightless Australian bird"}, {"w": "SUBWAY", "r": 6, "c": 5, "d": "A", "clue": "Underground train, like the ones that crisscross Seoul"}, {"w": "SUB", "r": 6, "c": 5, "d": "D", "clue": "Sandwich, for short"}, {"w": "NEIGHBOR", "r": 8, "c": 0, "d": "A", "clue": "Person who lives next door"}, {"w": "OWL", "r": 8, "c": 6, "d": "D", "clue": "Night bird with a hoot"}, {"w": "ALGORITHM", "r": 10, "c": 5, "d": "A", "clue": "Step-by-step set of rules a computer follows"}, {"w": "AGO", "r": 10, "c": 5, "d": "D", "clue": "Two years ___"}, {"w": "PIANO", "r": 12, "c": 1, "d": "A", "clue": "Instrument with black and white keys"}, {"w": "NIL", "r": 12, "c": 4, "d": "D", "clue": "Zero, on a scoreboard"}, {"w": "LETTER", "r": 14, "c": 4, "d": "A", "clue": "It goes in an envelope"}]}, {"date": "2026-11-17", "no": 3, "level": "easy", "theme_line": "A Roof, a River, and a Robot", "words": [{"w": "KITCHEN", "r": 0, "c": 2, "d": "D", "clue": "Room where meals are made"}, {"w": "TICKET", "r": 2, "c": 2, "d": "A", "clue": "It can get you into a show — or cost you for speeding"}, {"w": "CHATBOT", "r": 2, "c": 4, "d": "D", "clue": "AI helper that chats with you online"}, {"w": "HANRIVER", "r": 3, "c": 9, "d": "D", "clue": "River that flows through Seoul"}, {"w": "SMART", "r": 4, "c": 7, "d": "A", "clue": "___ home, a house full of connected gadgets"}, {"w": "SHELTER", "r": 5, "c": 0, "d": "A", "clue": "A roof over your head; a safe place to stay"}, {"w": "SANDWICH", "r": 5, "c": 0, "d": "D", "clue": "Lunch between two slices of bread"}, {"w": "BUTTERFLY", "r": 6, "c": 14, "d": "D", "clue": "Former caterpillar with colourful wings?"}, {"w": "COMMUNITY", "r": 7, "c": 3, "d": "A", "clue": "Group of neighbours who share an area"}, {"w": "CAMERA", "r": 8, "c": 12, "d": "D", "clue": "It takes photographs"}, {"w": "ELEPHANT", "r": 9, "c": 7, "d": "A", "clue": "Animal with a trunk — and a famously good memory?"}, {"w": "GUITAR", "r": 12, "c": 7, "d": "A", "clue": "Six-string instrument"}]}, {"date": "2026-11-18", "no": 4, "level": "easy", "theme_line": "Warm Homes and Winter Light", "words": [{"w": "BICYCLE", "r": 0, "c": 14, "d": "D", "clue": "Two-wheeled ride with pedals"}, {"w": "SUNSET", "r": 1, "c": 12, "d": "D", "clue": "When the sun goes down in the evening"}, {"w": "VOUCHER", "r": 2, "c": 9, "d": "D", "clue": "A ticket that pays for something, like energy help"}, {"w": "JOURNEY", "r": 3, "c": 8, "d": "A", "clue": "A long trip"}, {"w": "RENTAL", "r": 5, "c": 1, "d": "D", "clue": "A flat you pay monthly to live in"}, {"w": "MUSIC", "r": 5, "c": 5, "d": "A", "clue": "___ to my ears"}, {"w": "WARMTH", "r": 6, "c": 3, "d": "D", "clue": "Cosy heat on a cold day"}, {"w": "APARTMENT", "r": 7, "c": 3, "d": "A", "clue": "A home in a building shared with many other homes"}, {"w": "TIGER", "r": 7, "c": 11, "d": "D", "clue": "Big cat that can't change its stripes?"}, {"w": "STAR", "r": 8, "c": 0, "d": "A", "clue": "It twinkles in the night sky"}, {"w": "MOON", "r": 9, "c": 3, "d": "A", "clue": "It lights up the night sky"}, {"w": "ORANGE", "r": 9, "c": 5, "d": "D", "clue": "Fruit that shares its name with a colour"}, {"w": "ENERGY", "r": 10, "c": 9, "d": "A", "clue": "Power that runs lights and heaters"}, {"w": "ELDERLY", "r": 14, "c": 5, "d": "A", "clue": "Older people, as a group"}]}, {"date": "2026-11-19", "no": 5, "level": "easy", "theme_line": "A Landlord, a Sensor, and a Song", "words": [{"w": "LANDLORD", "r": 7, "c": 3, "d": "A", "clue": "Person who owns the flat you rent"}, {"w": "SONG", "r": 6, "c": 8, "d": "D", "clue": "Tune you can hum"}, {"w": "BREAD", "r": 4, "c": 4, "d": "D", "clue": "Bakery staple"}, {"w": "PAPER", "r": 5, "c": 0, "d": "A", "clue": "You write on it"}, {"w": "LIGHT", "r": 9, "c": 6, "d": "A", "clue": "It chases away the dark"}, {"w": "BOOK", "r": 4, "c": 4, "d": "A", "clue": "You read it cover to cover"}, {"w": "SENSOR", "r": 0, "c": 6, "d": "D", "clue": "Device that notices movement or heat"}, {"w": "CARE", "r": 1, "c": 3, "d": "A", "clue": "Look after"}, {"w": "NIGHT", "r": 2, "c": 6, "d": "A", "clue": "When the stars come out"}, {"w": "SUBSIDY", "r": 0, "c": 6, "d": "A", "clue": "Government help that makes the rent cheaper"}, {"w": "APPLE", "r": 4, "c": 0, "d": "D", "clue": "Fruit that keeps the doctor away, they say"}, {"w": "TEA", "r": 2, "c": 10, "d": "D", "clue": "Cuppa"}, {"w": "MAP", "r": 3, "c": 2, "d": "D", "clue": "It shows the way"}, {"w": "RAIN", "r": 4, "c": 9, "d": "A", "clue": "It falls from clouds"}, {"w": "DATA", "r": 7, "c": 10, "d": "D", "clue": "Numbers a computer crunches"}]}, {"date": "2026-11-20", "no": 6, "level": "easy", "theme_line": "Old Roofs, New Machines", "words": [{"w": "PLAZA", "r": 0, "c": 2, "d": "D", "clue": "Open square in a city centre"}, {"w": "PALACE", "r": 0, "c": 2, "d": "A", "clue": "Gyeongbokgung, for one"}, {"w": "JEONSE", "r": 0, "c": 9, "d": "D", "clue": "Korean lump-sum deposit rental system"}, {"w": "TRAIN", "r": 2, "c": 0, "d": "A", "clue": "It runs on rails between stations"}, {"w": "PUBLIC", "r": 3, "c": 5, "d": "D", "clue": "___ housing, homes provided for the community"}, {"w": "CANDLE", "r": 3, "c": 7, "d": "A", "clue": "It lights a birthday cake"}, {"w": "HANGUL", "r": 4, "c": 1, "d": "A", "clue": "Korean alphabet created in the 1440s"}, {"w": "MACHINE", "r": 5, "c": 8, "d": "D", "clue": "Washing ___ that does the chores for you?"}, {"w": "MEAL", "r": 5, "c": 8, "d": "A", "clue": "Breakfast, lunch, or dinner"}, {"w": "HANOK", "r": 6, "c": 2, "d": "D", "clue": "Traditional Korean house with a curved roof"}, {"w": "ARTIFICIAL", "r": 7, "c": 2, "d": "A", "clue": "___ intelligence, the field behind chatbots"}, {"w": "SOUP", "r": 9, "c": 1, "d": "A", "clue": "Bowlful on a cold day?"}, {"w": "RIVER", "r": 9, "c": 7, "d": "A", "clue": "The Han is one"}, {"w": "WINTER", "r": 11, "c": 4, "d": "A", "clue": "Season of snow and short days"}]}, {"date": "2026-11-21", "no": 7, "level": "easy", "theme_line": "Homes, Ladders, and Learning Machines", "words": [{"w": "NETWORK", "r": 0, "c": 3, "d": "A", "clue": "Computers linked together; a social ___"}, {"w": "KEYBOARD", "r": 0, "c": 9, "d": "D", "clue": "You type on it"}, {"w": "LADDER", "r": 0, "c": 13, "d": "D", "clue": "You climb it to reach the roof"}, {"w": "DIGITAL", "r": 1, "c": 11, "d": "D", "clue": "On a screen, not on paper"}, {"w": "PICNIC", "r": 2, "c": 5, "d": "D", "clue": "Outdoor meal on a blanket"}, {"w": "BUTTON", "r": 5, "c": 0, "d": "A", "clue": "Press it to start the machine"}, {"w": "LANTERN", "r": 5, "c": 8, "d": "A", "clue": "Light you carry on a dark night"}, {"w": "MORTGAGE", "r": 6, "c": 7, "d": "D", "clue": "Home loan paid back month by month"}, {"w": "CLOUD", "r": 7, "c": 5, "d": "A", "clue": "It holds your photos online — and rain?"}, {"w": "TENANCY", "r": 8, "c": 1, "d": "D", "clue": "Renting a home, as a legal arrangement"}, {"w": "VILLAGE", "r": 8, "c": 13, "d": "D", "clue": "Small community where everyone knows your name?"}, {"w": "TENEMENT", "r": 9, "c": 0, "d": "A", "clue": "Old block of flats in a crowded city"}, {"w": "MIRROR", "r": 9, "c": 4, "d": "D", "clue": "It shows your reflection"}, {"w": "BAKER", "r": 11, "c": 0, "d": "A", "clue": "One who makes bread"}, {"w": "HARBOR", "r": 11, "c": 6, "d": "A", "clue": "Where boats shelter from the sea"}, {"w": "LEARNING", "r": 13, "c": 6, "d": "A", "clue": "Machine ___: how AI gets smarter from data"}]}, {"date": "2026-11-23", "no": 8, "level": "easy", "theme_line": "The Cooperative City", "words": [{"w": "BRIDGE", "r": 0, "c": 6, "d": "D", "clue": "Card game for four, or a river-crosser?"}, {"w": "SEOUL", "r": 0, "c": 8, "d": "D", "clue": "Capital of South Korea"}, {"w": "MARKET", "r": 1, "c": 4, "d": "A", "clue": "Place to buy fresh vegetables and flowers"}, {"w": "HANGUL", "r": 4, "c": 3, "d": "A", "clue": "Korean writing system"}, {"w": "AUTOMATION", "r": 4, "c": 4, "d": "D", "clue": "Machines taking over routine jobs"}, {"w": "MUSIC", "r": 4, "c": 10, "d": "D", "clue": "What a piano and a guitar both make"}, {"w": "WELFARE", "r": 6, "c": 12, "d": "D", "clue": "Support for people who need a helping hand"}, {"w": "COOPERATIVE", "r": 7, "c": 2, "d": "A", "clue": "Member-owned business, e.g. a housing ___"}, {"w": "CHATBOT", "r": 9, "c": 2, "d": "A", "clue": "Online helper that answers in a chat window"}, {"w": "BREAD", "r": 10, "c": 9, "d": "A", "clue": "It rises in the oven"}, {"w": "GARDEN", "r": 12, "c": 8, "d": "A", "clue": "A plot that grows on you?"}, {"w": "WINDOW", "r": 13, "c": 2, "d": "A", "clue": "You open it to let in fresh air"}]}, {"date": "2026-11-24", "no": 9, "level": "easy", "theme_line": "Cities That Care", "words": [{"w": "SUNRISE", "r": 0, "c": 6, "d": "A", "clue": "Dawn's first light"}, {"w": "SOLIDARITY", "r": 0, "c": 11, "d": "D", "clue": "Standing together for a shared cause"}, {"w": "LIBRARY", "r": 1, "c": 3, "d": "D", "clue": "Quiet place full of books"}, {"w": "DENSITY", "r": 2, "c": 1, "d": "D", "clue": "How crowded a neighbourhood is, in planning terms"}, {"w": "SOLAR", "r": 2, "c": 9, "d": "A", "clue": "___ panel, a rooftop source of power"}, {"w": "BANANA", "r": 3, "c": 3, "d": "A", "clue": "Yellow fruit that comes in a bunch"}, {"w": "AUTONOMOUS", "r": 3, "c": 8, "d": "D", "clue": "Self-driving, as a car"}, {"w": "SMARTCITY", "r": 5, "c": 1, "d": "A", "clue": "High-tech urban vision where sensors run the streets?"}, {"w": "MOUNTAIN", "r": 5, "c": 14, "d": "D", "clue": "Everest is one"}, {"w": "RENOVATION", "r": 8, "c": 5, "d": "A", "clue": "Giving an old home a fresh start"}, {"w": "RAINBOW", "r": 8, "c": 5, "d": "D", "clue": "Colourful arc after a shower"}, {"w": "PUZZLE", "r": 11, "c": 7, "d": "A", "clue": "What you're solving right now?"}, {"w": "FLOWER", "r": 14, "c": 2, "d": "A", "clue": "It blooms in spring"}]}];
+const CFG = {"en": true, "lsPrefix": "cw-en-", "across": " Across. ", "down": " Down. "};
+const N = 15;
+const key = (r,c)=>r+','+c;
+let pIdx = PUZZLES.length-1;
+let sol={}, wordList=[], wordNum={}, numAt={}, cover={};
+let entry={}, locked={}, selWi=-1, selCell=null;
+const $ = id=>document.getElementById(id);
+
+function store(k,v){ try{ if(v===undefined) return JSON.parse(localStorage.getItem(k)||'null'); localStorage.setItem(k, JSON.stringify(v)); }catch(e){ return null; } }
+function saveProg(){ const p=PUZZLES[pIdx]; store(CFG.lsPrefix+p.no, {entry, locked}); }
+function loadProg(){ const p=PUZZLES[pIdx]; const s=store(CFG.lsPrefix+p.no); entry = s&&s.entry?s.entry:{}; locked = s&&s.locked?s.locked:{}; }
+
+function wordCells(w){ const out=[]; const L=[...w.w].length; for(let i=0;i<L;i++){ out.push([w.r+(w.d==='D'?i:0), w.c+(w.d==='A'?i:0)]); } return out; }
+
+function build(){
+  const p = PUZZLES[pIdx];
+  sol={}; cover={}; wordList=p.words.map((w,i)=>({...w, _i:i}));
+  wordList.forEach(w=>{ [...w.w].forEach((ch,i)=>{ const r=w.r+(w.d==='D'?i:0), c=w.c+(w.d==='A'?i:0); sol[key(r,c)]=ch; (cover[key(r,c)]=cover[key(r,c)]||[]).push(w._i); }); });
+  const starts={};
+  wordList.forEach(w=>{ starts[key(w.r,w.c)]=true; });
+  numAt={}; let n=0;
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++) if(starts[key(r,c)]) numAt[key(r,c)]=++n;
+  wordNum={}; wordList.forEach(w=>{ wordNum[w._i]=numAt[key(w.r,w.c)]; });
+  loadProg();
+  $('meta').innerHTML = '<b>No. '+p.no+'</b> · '+p.date+' · '+escapeHtml(p.theme_line)+' · '+escapeHtml(p.level);
+  renderGrid(); renderClues();
+  const firstA = wordList.find(w=>w.d==='A') || wordList[0];
+  selectWord(firstA._i, false);
+  updateBanner();
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+function renderGrid(){
+  const g=$('grid'); g.innerHTML='';
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+    const d=document.createElement('div');
+    if(!(key(r,c) in sol)){ d.className='cell black'; }
+    else{
+      d.className='cell'; d.dataset.r=r; d.dataset.c=c;
+      if(numAt[key(r,c)]){ const s=document.createElement('span'); s.className='num'; s.textContent=numAt[key(r,c)]; d.appendChild(s); }
+      const ch=document.createElement('span'); ch.className='ch'; ch.id='ch-'+r+'-'+c; d.appendChild(ch);
+      d.addEventListener('click', ()=>onCell(r,c));
+    }
+    g.appendChild(d);
+  }
+  refreshCells();
+}
+function refreshCells(){
+  for(const k in sol){
+    const [r,c]=k.split(',').map(Number);
+    const cell=document.querySelector('.cell[data-r="'+r+'"][data-c="'+c+'"]');
+    const ch=$('ch-'+r+'-'+c);
+    if(ch) ch.textContent = entry[k]||'';
+    if(cell){ cell.classList.toggle('rev', !!locked[k]); }
+  }
+}
+function renderClues(){
+  const mk = dir => wordList.filter(w=>w.d===dir).sort((a,b)=>wordNum[a._i]-wordNum[b._i]).map(w=>
+    '<div class="clue" data-wi="'+w._i+'" id="clue-'+w._i+'"><b>'+wordNum[w._i]+'.</b>'+escapeHtml(w.clue)+'</div>').join('');
+  $('cluesA').innerHTML = mk('A'); $('cluesD').innerHTML = mk('D');
+  document.querySelectorAll('.clue').forEach(el=>el.addEventListener('click', ()=>selectWord(+el.dataset.wi, true)));
+}
+function onCell(r,c){
+  const ws = cover[key(r,c)]||[];
+  if(!ws.length) return;
+  if(selWi>=0 && ws.includes(selWi) && ws.length>1){ selectWord(ws.find(i=>i!==selWi), true); }
+  else if(selWi>=0 && ws.includes(selWi)){ selectWord(selWi, true); }
+  else selectWord(ws[0], true);
+  selCell=[r,c]; markSel();
+}
+function selectWord(wi, focus){
+  selWi=wi;
+  const w=wordList[wi];
+  selCell = wordCells(w)[0];
+  markSel();
+  $('eclue').innerHTML = '<b>'+wordNum[wi]+(w.d==='A'?CFG.across:CFG.down)+'</b> '+escapeHtml(w.clue);
+  syncEntryField();
+  if(focus) $('entry').focus();
+}
+function markSel(){
+  document.querySelectorAll('.cell').forEach(el=>el.classList.remove('hl','cur'));
+  document.querySelectorAll('.clue').forEach(el=>el.classList.toggle('sel', +el.dataset.wi===selWi));
+  if(selWi<0) return;
+  wordCells(wordList[selWi]).forEach(([r,c])=>{
+    const cell=document.querySelector('.cell[data-r="'+r+'"][data-c="'+c+'"]');
+    if(cell) cell.classList.add('hl');
+  });
+  if(selCell){ const cell=document.querySelector('.cell[data-r="'+selCell[0]+'"][data-c="'+selCell[1]+'"]'); if(cell) cell.classList.add('cur'); }
+  const cl=$('clue-'+selWi); if(cl) cl.scrollIntoView({block:'nearest'});
+}
+function wordString(w){
+  return wordCells(w).map(([r,c])=> entry[key(r,c)]||'').join('');
+}
+function syncEntryField(){ if(selWi>=0) $('entry').value = wordString(wordList[selWi]); }
+function normalize(s){
+  s = s.replace(/\s+/g,'');
+  if(CFG.en) s = s.toUpperCase().replace(/[^A-Z]/g,'');
+  return [...s];
+}
+$('entry').addEventListener('input', ()=>{
+  if(selWi<0) return;
+  const w=wordList[selWi]; const cells=wordCells(w); const chars=normalize($('entry').value);
+  cells.forEach(([r,c],i)=>{
+    const k=key(r,c);
+    if(locked[k]) return;
+    entry[k] = chars[i]||'';
+    const cell=document.querySelector('.cell[data-r="'+r+'"][data-c="'+c+'"]');
+    if(cell) cell.classList.remove('ok','bad');
+  });
+  // keep locked letters visible at their positions in the field
+  if(cells.some(([r,c])=>locked[key(r,c)])) syncEntryField();
+  refreshCells(); saveProg(); updateBanner();
+});
+function isSolved(){ return Object.keys(sol).every(k=> entry[k]===sol[k]); }
+function updateBanner(){ $('banner').style.display = isSolved() ? 'block':'none'; }
+$('checkBtn').addEventListener('click', ()=>{
+  for(const k in sol){
+    const [r,c]=k.split(',').map(Number);
+    const cell=document.querySelector('.cell[data-r="'+r+'"][data-c="'+c+'"]');
+    if(!cell) continue;
+    cell.classList.remove('ok','bad');
+    if(entry[k]) cell.classList.add(entry[k]===sol[k] ? 'ok':'bad');
+  }
+  updateBanner();
+});
+function revealCells(list){
+  list.forEach(([r,c])=>{ const k=key(r,c); entry[k]=sol[k]; locked[k]=true; });
+  refreshCells(); syncEntryField(); saveProg(); updateBanner();
+}
+$('revLetterBtn').addEventListener('click', ()=>{
+  let target=null;
+  if(selCell){ const k=key(selCell[0],selCell[1]); if(entry[k]!==sol[k]) target=selCell; }
+  if(!target && selWi>=0){ const cs=wordCells(wordList[selWi]); target=cs.find(([r,c])=>entry[key(r,c)]!==sol[key(r,c)])||null; }
+  if(!target){ for(const k in sol){ if(entry[k]!==sol[k]){ target=k.split(',').map(Number); break; } } }
+  if(target) revealCells([target]);
+});
+$('revWordBtn').addEventListener('click', ()=>{ if(selWi>=0) revealCells(wordCells(wordList[selWi])); });
+$('revAllBtn').addEventListener('click', ()=>{ revealCells(Object.keys(sol).map(k=>k.split(',').map(Number))); });
+$('clearBtn').addEventListener('click', ()=>{
+  for(const k in sol) if(!locked[k]) entry[k]='';
+  document.querySelectorAll('.cell').forEach(el=>el.classList.remove('ok','bad'));
+  refreshCells(); syncEntryField(); saveProg(); updateBanner();
+});
+// picker
+const picker=$('picker');
+PUZZLES.forEach((p,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent='No. '+p.no+' · '+p.date+' · '+p.theme_line; picker.appendChild(o); });
+picker.value=pIdx;
+picker.addEventListener('change', ()=>{ pIdx=+picker.value; build(); });
+$('prevBtn').addEventListener('click', ()=>{ if(pIdx>0){ pIdx--; picker.value=pIdx; build(); } });
+$('nextBtn').addEventListener('click', ()=>{ if(pIdx<PUZZLES.length-1){ pIdx++; picker.value=pIdx; build(); } });
+build();
+</script>
+</body>
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>한국어 데일리 크로스워드</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+  :root{ --ink:#1a1a1a; --paper:#fdfcf8; --line:#222; --hl:#ffe9a8; --hl2:#ffd34d; --ok:#2e7d32; --bad:#c62828; --rev:#6a1b9a; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--paper); color:var(--ink); font-family:"Pretendard Variable",Pretendard,-apple-system,"Malgun Gothic",sans-serif; }
+  header{ text-align:center; padding:18px 12px 8px; border-bottom:3px double var(--line); }
+  header h1{ margin:0; font-size:clamp(22px,5vw,34px); letter-spacing:.5px; }
+  header p{ margin:4px 0 8px; color:#555; font-size:13px; }
+  .wrap{ max-width:1060px; margin:0 auto; padding:14px; }
+  .picker{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:center; margin-bottom:6px; }
+  .picker select{ font-size:15px; padding:7px 10px; max-width:92vw; }
+  .picker button, .tools button{ font-size:14px; padding:7px 12px; border:1.5px solid var(--line); background:#fff; border-radius:6px; cursor:pointer; }
+  .picker button:hover, .tools button:hover{ background:#f0ead8; }
+  .meta{ text-align:center; color:#444; font-size:14px; margin:4px 0 12px; }
+  .meta b{ color:var(--ink); }
+  .main{ display:flex; gap:22px; flex-wrap:wrap; justify-content:center; align-items:flex-start; }
+  .gridbox{ width:min(94vw,540px); }
+  .grid{ display:grid; grid-template-columns:repeat(15,1fr); border:2px solid var(--line); background:var(--line); gap:1px; user-select:none; }
+  .cell{ background:#fff; aspect-ratio:1/1; position:relative; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .cell.black{ background:#222; cursor:default; }
+  .cell .num{ position:absolute; top:0; left:2px; font-size:clamp(7px,1.6vw,10px); line-height:1.2; color:#333; }
+  .cell .ch{ font-size:clamp(11px,3.2vw,21px); font-weight:600; }
+  .cell.hl{ background:var(--hl); }
+  .cell.cur{ background:var(--hl2); }
+  .cell.ok .ch{ color:var(--ok); }
+  .cell.bad{ background:#fbe4e4; }
+  .cell.bad .ch{ color:var(--bad); }
+  .cell.rev .ch{ color:var(--rev); }
+  .entrybox{ margin-top:12px; border:1.5px solid var(--line); border-radius:8px; padding:10px 12px; background:#fff; }
+  .entrybox .eclue{ font-size:14px; margin-bottom:8px; min-height:20px; }
+  .entrybox input{ width:100%; font-size:20px; padding:9px 10px; border:1.5px solid #999; border-radius:6px; letter-spacing:2px; }
+  .tools{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; justify-content:center; }
+  .banner{ display:none; margin-top:12px; text-align:center; font-size:17px; font-weight:700; color:var(--ok); }
+  .clues{ width:min(94vw,400px); display:flex; gap:18px; }
+  .clues .col{ flex:1; }
+  .clues h3{ margin:2px 0 8px; font-size:16px; border-bottom:2px solid var(--line); padding-bottom:4px; }
+  .clue{ font-size:13.5px; padding:5px 6px; border-radius:5px; cursor:pointer; line-height:1.45; }
+  .clue:hover{ background:#f3efdf; }
+  .clue.sel{ background:var(--hl); }
+  .clue b{ margin-right:4px; }
+  footer{ text-align:center; color:#888; font-size:12px; padding:16px 0 26px; }
+  @media (max-width:760px){ .clues{ flex-direction:column; gap:6px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>한국어 데일리 크로스워드</h1>
+  <p>매일 만나는 가로세로 낱말퍼즐 — 사회주택, 돌봄, 에너지 복지와 일상 단어</p>
+</header>
+<div class="wrap">
+  <div class="picker">
+    <button id="prevBtn" type="button">◀</button>
+    <select id="picker"></select>
+    <button id="nextBtn" type="button">▶</button>
+  </div>
+  <div class="meta" id="meta"></div>
+  <div class="main">
+    <div class="gridbox">
+      <div class="grid" id="grid"></div>
+      <div class="entrybox">
+        <div class="eclue" id="eclue"></div>
+        <input id="entry" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="여기에 단어를 입력하세요">
+      </div>
+      <div class="tools">
+        <button id="checkBtn" type="button">정답 확인</button>
+        <button id="revLetterBtn" type="button">글자 공개</button>
+        <button id="revWordBtn" type="button">단어 공개</button>
+        <button id="revAllBtn" type="button">전체 공개</button>
+        <button id="clearBtn" type="button">지우기</button>
+      </div>
+      <div class="banner" id="banner">🎉 퍼즐 완성! 축하합니다!</div>
+    </div>
+    <div class="clues">
+      <div class="col"><h3>가로</h3><div id="cluesA"></div></div>
+      <div class="col"><h3>세로</h3><div id="cluesD"></div></div>
+    </div>
+  </div>
+</div>
+<footer>정적 아카이브 판 · 퍼즐 1–10번 · 진행 상황은 이 브라우저에만 저장됩니다</footer>
+<script>
+const PUZZLES = [{"date": "2026-11-15", "no": 1, "level": "보통", "theme_line": "함께 사는 집, 함께 나누는 온기", "words": [{"w": "연대", "r": 5, "c": 6, "d": "A", "clue": "어려울 때 서로 손을 맞잡는 일"}, {"w": "주택", "r": 6, "c": 7, "d": "A", "clue": "집의 격식 있는 이름"}, {"w": "사회주택", "r": 7, "c": 4, "d": "A", "clue": "시세보다 낮은 임대료로 오래 살 수 있게 공공과 비영리가 공급하는 집"}, {"w": "에너지바우처", "r": 10, "c": 4, "d": "A", "clue": "취약계층의 전기·가스·난방비를 대신 내주는 정부 이용권"}, {"w": "지역", "r": 12, "c": 4, "d": "A", "clue": "내가 사는 동네와 그 주변을 아우르는 말"}, {"w": "임대주택", "r": 4, "c": 7, "d": "D", "clue": "보증금과 월세를 내고 빌려 사는 집"}, {"w": "사회", "r": 6, "c": 5, "d": "D", "clue": "사람들이 모여 이루는 큰 무리"}, {"w": "사진", "r": 7, "c": 4, "d": "D", "clue": "순간을 붙잡아 종이나 화면에 남긴 것"}, {"w": "주거복지", "r": 7, "c": 6, "d": "D", "clue": "집 걱정 없이 살 수 있게 돕는 정책 분야"}, {"w": "에너지", "r": 10, "c": 4, "d": "D", "clue": "일할 수 있는 힘, 전기도 열도 이것에서 나온다"}, {"w": "우산", "r": 10, "c": 8, "d": "D", "clue": "비 오는 날 머리 위에 펴는 것"}]}, {"date": "2026-11-16", "no": 2, "level": "보통", "theme_line": "함께 돌보고 함께 배우는 동네", "words": [{"w": "에너지복지", "r": 2, "c": 6, "d": "D", "clue": "취약계층의 난방비와 전기요금을 덜어주는 제도"}, {"w": "교회", "r": 3, "c": 4, "d": "D", "clue": "예배를 드리는 건물"}, {"w": "사회복지", "r": 4, "c": 3, "d": "A", "clue": "도움이 필요한 이웃을 보살피는 제도"}, {"w": "사랑", "r": 4, "c": 3, "d": "D", "clue": "마음을 주고받는 일"}, {"w": "지도", "r": 6, "c": 6, "d": "A", "clue": "길을 알려주는 그림"}, {"w": "도서관", "r": 6, "c": 7, "d": "D", "clue": "책을 빌려 읽을 수 있는 곳"}, {"w": "서점", "r": 7, "c": 7, "d": "A", "clue": "새 책을 사러 ___에 갔다"}, {"w": "교통", "r": 8, "c": 2, "d": "A", "clue": "사람과 차가 오가는 길"}, {"w": "통합돌봄", "r": 8, "c": 3, "d": "D", "clue": "의료와 요양, 주거 지원을 한데 묶어 주는 서비스"}, {"w": "복지관", "r": 8, "c": 5, "d": "A", "clue": "복지를 위해 세운 건물"}, {"w": "복지센터", "r": 8, "c": 5, "d": "D", "clue": "동네 주민의 복지를 돕는 기관"}, {"w": "센스", "r": 10, "c": 5, "d": "A", "clue": "재치와 감각을 아우르는 말"}, {"w": "돌봄센터", "r": 11, "c": 2, "d": "A", "clue": "아이와 노인을 돌보는 일을 맡는 곳"}]}, {"date": "2026-11-17", "no": 3, "level": "보통", "theme_line": "함께 아끼고 함께 사는 동네", "words": [{"w": "사회주택", "r": 0, "c": 4, "d": "A", "clue": "공공과 비영리가 함께 지어 시세보다 싸게 오래 빌려주는 집"}, {"w": "사계절", "r": 0, "c": 4, "d": "D", "clue": "봄, 여름, 가을, 겨울을 모두 합친 말"}, {"w": "주스", "r": 0, "c": 6, "d": "D", "clue": "과일을 짜서 만든 음료"}, {"w": "에너지절약", "r": 2, "c": 1, "d": "A", "clue": "불필요한 전기와 가스 사용을 줄이는 일"}, {"w": "에너지복지", "r": 2, "c": 1, "d": "D", "clue": "어려운 이웃의 전기·가스·난방비를 돕는 제도"}, {"w": "편지", "r": 4, "c": 0, "d": "A", "clue": "우표를 붙여 마음을 전하는 글"}, {"w": "공동체", "r": 4, "c": 4, "d": "A", "clue": "이웃이 서로 돕고 함께 살아가는 모임"}, {"w": "공책", "r": 4, "c": 4, "d": "D", "clue": "글을 쓰거나 그림을 그리는 줄무늬 책"}, {"w": "체육관", "r": 4, "c": 6, "d": "D", "clue": "비 오는 날에도 운동할 수 있는 실내 운동장"}, {"w": "복지정책", "r": 5, "c": 1, "d": "A", "clue": "국민의 삶을 돕기 위해 나라가 세우는 계획"}, {"w": "정류장", "r": 5, "c": 3, "d": "D", "clue": "버스를 기다리며 타는 곳"}, {"w": "책장", "r": 7, "c": 2, "d": "A", "clue": "책을 꽂아 두는 가구"}]}, {"date": "2026-11-18", "no": 4, "level": "보통", "theme_line": "함께 살고 함께 돕는 동네", "words": [{"w": "주거안정", "r": 8, "c": 11, "d": "A", "clue": "집 걱정 없이 오래 살 수 있는 상태"}, {"w": "주거복지", "r": 8, "c": 11, "d": "D", "clue": "사는 곳이 마땅치 않은 이웃을 돕는 정책"}, {"w": "사회복지", "r": 11, "c": 8, "d": "A", "clue": "아이부터 노인까지, 도움이 필요한 사람을 돕는 일"}, {"w": "사회연대", "r": 11, "c": 8, "d": "D", "clue": "어려울 때 서로 손을 맞잡고 함께 나아가는 일"}, {"w": "자전거", "r": 9, "c": 9, "d": "A", "clue": "주말에 한강에서 ___를 타고 달렸다"}, {"w": "복지관", "r": 10, "c": 11, "d": "A", "clue": "어르신과 아이, 어려운 이웃을 돕는 동네 건물"}, {"w": "대나무", "r": 14, "c": 8, "d": "A", "clue": "판다가 즐겨 먹는 식물"}, {"w": "대회", "r": 12, "c": 7, "d": "A", "clue": "실력을 겨뤄 순위를 정하는 모임"}, {"w": "조정", "r": 7, "c": 14, "d": "D", "clue": "의견이 엇갈릴 때 서로 ___하는 일"}, {"w": "사무", "r": 13, "c": 10, "d": "D", "clue": "회사나 관공서에서 처리하는 일"}, {"w": "사과", "r": 13, "c": 10, "d": "A", "clue": "빨간 열매이자, 잘못했을 때 하는 말"}, {"w": "사자", "r": 8, "c": 9, "d": "D", "clue": "갈기가 멋진 초원의 왕"}, {"w": "주사", "r": 8, "c": 8, "d": "A", "clue": "아플 때 간호사가 팔에 놓아 주는 것"}]}, {"date": "2026-11-19", "no": 5, "level": "보통", "theme_line": "함께 살고 함께 일하는 동네", "words": [{"w": "주민", "r": 5, "c": 3, "d": "D", "clue": "한 동네에 함께 사는 사람"}, {"w": "민주주의", "r": 6, "c": 3, "d": "A", "clue": "국민이 주인으로 나라를 이끄는 정치"}, {"w": "주거지원", "r": 6, "c": 4, "d": "D", "clue": "집이 필요한 이웃에게 임대료나 보증금을 도와주는 일"}, {"w": "의자", "r": 6, "c": 6, "d": "D", "clue": "앉아서 쉬는 가구"}, {"w": "영화", "r": 6, "c": 8, "d": "D", "clue": "큰 화면에서 보는 이야기"}, {"w": "자동화", "r": 7, "c": 6, "d": "A", "clue": "사람 손을 덜어 기계나 프로그램이 일을 대신 처리하게 하는 것"}, {"w": "동네", "r": 7, "c": 7, "d": "D", "clue": "집과 가게가 모여 있는, 우리가 함께 사는 곳"}, {"w": "지식", "r": 8, "c": 4, "d": "A", "clue": "배워서 알게 된 것"}, {"w": "공원", "r": 9, "c": 3, "d": "A", "clue": "동네 사람들이 산책하고 쉬는 푸른 쉼터"}, {"w": "공공임대", "r": 9, "c": 3, "d": "D", "clue": "나라나 공공기관이 지어 싸게 빌려주는 집"}, {"w": "대학", "r": 12, "c": 3, "d": "A", "clue": "고등학교를 마치고 다니는 큰 학교"}, {"w": "학교", "r": 12, "c": 4, "d": "D", "clue": "아이들이 배우러 다니는 곳"}, {"w": "교실", "r": 13, "c": 4, "d": "A", "clue": "학생들이 수업을 듣는 방"}]}, {"date": "2026-11-20", "no": 6, "level": "보통", "theme_line": "따뜻한 집, 함께하는 돌봄", "words": [{"w": "사회주택", "r": 0, "c": 6, "d": "A", "clue": "공공과 비영리가 함께 지어 시세보다 싸게 오래 빌려주는 집"}, {"w": "주거복지", "r": 0, "c": 8, "d": "D", "clue": "집 걱정 없이 살 수 있게 돕는 정책 분야"}, {"w": "편지", "r": 2, "c": 6, "d": "D", "clue": "우표를 붙여 마음을 전하는 글"}, {"w": "복지관", "r": 2, "c": 8, "d": "A", "clue": "어르신과 아이, 어려운 이웃을 돕는 동네 건물"}, {"w": "관광", "r": 2, "c": 10, "d": "D", "clue": "구경하며 여행하는 일"}, {"w": "에너지복지", "r": 3, "c": 4, "d": "A", "clue": "어려운 이웃의 전기·가스·난방비를 돕는 제도"}, {"w": "에너지", "r": 3, "c": 4, "d": "D", "clue": "일할 수 있는 힘, 전기도 열도 이것에서 나온다"}, {"w": "광장", "r": 3, "c": 10, "d": "A", "clue": "사람들이 모이는 넓은 빈터"}, {"w": "장소", "r": 3, "c": 11, "d": "D", "clue": "어떤 일이 일어나는 곳"}, {"w": "소원", "r": 4, "c": 11, "d": "A", "clue": "간절히 바라는 마음"}, {"w": "원서", "r": 4, "c": 12, "d": "D", "clue": "학교나 직장에 내는 지원 서류"}, {"w": "에너지절약", "r": 5, "c": 2, "d": "A", "clue": "불필요한 전기와 가스 사용을 줄이는 일"}, {"w": "서울", "r": 5, "c": 12, "d": "A", "clue": "대한민국의 수도"}]}, {"date": "2026-11-21", "no": 7, "level": "보통", "theme_line": "추운 겨울, 따뜻한 집", "words": [{"w": "사회주택", "r": 6, "c": 5, "d": "A", "clue": "공공과 비영리 단체가 함께 지어 저렴하게 빌려주는 집"}, {"w": "주거복지", "r": 6, "c": 7, "d": "D", "clue": "주거비 부담을 덜어 집 걱정 없이 살게 돕는 정책"}, {"w": "복지관", "r": 8, "c": 7, "d": "A", "clue": "이웃의 복지를 돕기 위해 동네에 세운 건물"}, {"w": "에너지", "r": 9, "c": 5, "d": "A", "clue": "전기와 열의 원천이 되는 힘"}, {"w": "서울", "r": 4, "c": 3, "d": "D", "clue": "한강이 흐르는 대한민국의 수도"}, {"w": "학사", "r": 5, "c": 5, "d": "D", "clue": "대학교를 마치고 받는 학위"}, {"w": "겨울", "r": 5, "c": 2, "d": "D", "clue": "눈이 내리는 가장 추운 계절"}, {"w": "겨울방학", "r": 5, "c": 2, "d": "A", "clue": "추운 계절에 학교가 쉬는 기간"}, {"w": "관심", "r": 8, "c": 9, "d": "D", "clue": "마음을 두고 살피는 일"}, {"w": "심장", "r": 9, "c": 9, "d": "A", "clue": "가슴 속에서 뛰며 피를 온몸으로 보내는 기관"}, {"w": "장미", "r": 9, "c": 10, "d": "D", "clue": "향기가 좋고 가시가 있는 꽃"}]}, {"date": "2026-11-22", "no": 8, "level": "보통", "theme_line": "겨울을 준비하는 따뜻한 집", "words": [{"w": "영화", "r": 1, "c": 11, "d": "D", "clue": "큰 화면에서 보는 이야기"}, {"w": "자동화", "r": 2, "c": 9, "d": "A", "clue": "사람 손을 덜어 기계나 프로그램이 일을 대신 처리하게 하는 것"}, {"w": "자전거", "r": 2, "c": 9, "d": "D", "clue": "두 바퀴로 달리는 탈것"}, {"w": "주거안정", "r": 4, "c": 8, "d": "A", "clue": "집 걱정 없이 오래 살 수 있는 상태"}, {"w": "주거복지", "r": 4, "c": 8, "d": "D", "clue": "집 걱정 없이 살 수 있게 돕는 정책 분야"}, {"w": "복지관", "r": 6, "c": 8, "d": "A", "clue": "어르신과 아이, 어려운 이웃을 돕는 동네 건물"}, {"w": "에너지복지", "r": 7, "c": 4, "d": "A", "clue": "형편이 어려운 이웃의 전기·가스·난방비를 돕는 제도"}, {"w": "에너지절약", "r": 7, "c": 4, "d": "D", "clue": "불필요한 전기와 가스 사용을 줄이는 일"}, {"w": "지하철", "r": 7, "c": 6, "d": "D", "clue": "땅 밑으로 달리는 도시의 대중교통"}, {"w": "편지", "r": 9, "c": 3, "d": "A", "clue": "우표를 붙여 마음을 전하는 글"}]}, {"date": "2026-11-23", "no": 9, "level": "보통", "theme_line": "겨울에도 따뜻한 돌봄", "words": [{"w": "서울", "r": 3, "c": 3, "d": "D", "clue": "한강이 흐르는 대한민국의 수도"}, {"w": "목도리", "r": 3, "c": 9, "d": "A", "clue": "목에 두르는 겨울 방한용품"}, {"w": "도서관", "r": 3, "c": 10, "d": "D", "clue": "책을 빌려 읽을 수 있는 곳"}, {"w": "겨울방학", "r": 4, "c": 2, "d": "A", "clue": "추운 계절에 학교가 쉬는 기간"}, {"w": "겨울", "r": 4, "c": 2, "d": "D", "clue": "눈이 내리는 가장 추운 계절"}, {"w": "학교", "r": 4, "c": 5, "d": "D", "clue": "아이들이 배우러 다니는 곳"}, {"w": "교통", "r": 5, "c": 5, "d": "A", "clue": "사람과 차가 오가는 길"}, {"w": "통합돌봄", "r": 5, "c": 6, "d": "D", "clue": "의료·요양·주거 지원을 한데 묶어 주는 서비스"}, {"w": "복지관", "r": 5, "c": 8, "d": "A", "clue": "어르신과 아이, 어려운 이웃을 돕는 동네 건물"}, {"w": "복지센터", "r": 5, "c": 8, "d": "D", "clue": "동네 주민의 복지를 돕는 기관"}, {"w": "돌봄센터", "r": 7, "c": 6, "d": "A", "clue": "아이와 노인을 돌보는 일을 맡는 곳"}]}, {"date": "2026-11-24", "no": 10, "level": "보통", "theme_line": "연말, 집에서 나누는 온기", "words": [{"w": "영화", "r": 4, "c": 7, "d": "D", "clue": "큰 화면에서 보는 이야기"}, {"w": "자전거", "r": 5, "c": 5, "d": "D", "clue": "두 바퀴로 달리는 탈것"}, {"w": "자동화", "r": 5, "c": 5, "d": "A", "clue": "사람 손을 덜어 기계나 프로그램이 일을 대신 처리하게 하는 것"}, {"w": "주거지원", "r": 7, "c": 4, "d": "D", "clue": "집이 필요한 이웃에게 임대료나 보증금을 도와주는 일"}, {"w": "주거안정", "r": 7, "c": 4, "d": "A", "clue": "집 걱정 없이 오래 살 수 있는 상태"}, {"w": "정책", "r": 7, "c": 7, "d": "D", "clue": "나라가 세워 실천하는 계획"}, {"w": "책상", "r": 8, "c": 7, "d": "A", "clue": "공부할 때 앉는 책이 놓인 가구"}, {"w": "에너지절약", "r": 9, "c": 2, "d": "A", "clue": "불필요한 전기와 가스 사용을 줄이는 일"}, {"w": "에너지", "r": 9, "c": 2, "d": "D", "clue": "전기와 열의 원천이 되는 힘"}, {"w": "지하", "r": 11, "c": 2, "d": "A", "clue": "땅 아래"}]}];
+const CFG = {"en": false, "lsPrefix": "cw-ko-", "across": " 가로. ", "down": " 세로. "};
+const N = 15;
+const key = (r,c)=>r+','+c;
+let pIdx = PUZZLES.length-1;
+let sol={}, wordList=[], wordNum={}, numAt={}, cover={};
+let entry={}, locked={}, selWi=-1, selCell=null;
+const $ = id=>document.getElementById(id);
+
+function store(k,v){ try{ if(v===undefined) return JSON.parse(localStorage.getItem(k)||'null'); localStorage.setItem(k, JSON.stringify(v)); }catch(e){ return null; } }
+function saveProg(){ const p=PUZZLES[pIdx]; store(CFG.lsPrefix+p.no, {entry, locked}); }
+function loadProg(){ const p=PUZZLES[pIdx]; const s=store(CFG.lsPrefix+p.no); entry = s&&s.entry?s.entry:{}; locked = s&&s.locked?s.locked:{}; }
+
+function wordCells(w){ const out=[]; const L=[...w.w].length; for(let i=0;i<L;i++){ out.push([w.r+(w.d==='D'?i:0), w.c+(w.d==='A'?i:0)]); } return out; }
+
+function build(){
+  const p = PUZZLES[pIdx];
+  sol={}; cover={}; wordList=p.words.map((w,i)=>({...w, _i:i}));
+  wordList.forEach(w=>{ [...w.w].forEach((ch,i)=>{ const r=w.r+(w.d==='D'?i:0), c=w.c+(w.d==='A'?i:0); sol[key(r,c)]=ch; (cover[key(r,c)]=cover[key(r,c)]||[]).push(w._i); }); });
+  const starts={};
+  wordList.forEach(w=>{ starts[key(w.r,w.c)]=true; });
+  numAt={}; let n=0;
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++) if(starts[key(r,c)]) numAt[key(r,c)]=++n;
+  wordNum={}; wordList.forEach(w=>{ wordNum[w._i]=numAt[key(w.r,w.c)]; });
+  loadProg();
+  $('meta').innerHTML = '<b>No. '+p.no+'</b> · '+p.date+' · '+escapeHtml(p.theme_line)+' · '+escapeHtml(p.level);
+  renderGrid(); renderClues();
+  const firstA = wordList.find(w=>w.d==='A') || wordList[0];
+  selectWord(firstA._i, false);
+  updateBanner();
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+function renderGrid(){
+  const g=$('grid'); g.innerHTML='';
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+    const d=document.createElement('div');
+    if(!(key(r,c) in sol)){ d.className='cell black'; }
+    else{
+      d.className='cell'; d.dataset.r=r; d.dataset.c=c;
+      if(numAt[key(r,c)]){ const s=document.createElement('span'); s.className='num'; s.textContent=numAt[key(r,c)]; d.appendChild(s); }
+      const ch=document.createElement('span'); ch.className='ch'; ch.id='ch-'+r+'-'+c; d.appendChild(ch);
+      d.addEventListener('click', ()=>onCell(r,c));
+    }
+    g.appendChild(d);
+  }
+  refreshCells();
+}
+function refreshCells(){
+  for(const k in sol){
+    const [r,c]=k.split(',').map(Number);
+    const cell=document.querySelector('.cell[data-r="'+r+'"][data-c="'+c+'"]');
+    const ch=$('ch-'+r+'-'+c);
+    if(ch) ch.textContent = entry[k]||'';
+    if(cell){ cell.classList.toggle('rev', !!locked[k]); }
+  }
+}
+function renderClues(){
+  const mk = dir => wordList.filter(w=>w.d===dir).sort((a,b)=>wordNum[a._i]-wordNum[b._i]).map(w=>
+    '<div class="clue" data-wi="'+w._i+'" id="clue-'+w._i+'"><b>'+wordNum[w._i]+'.</b>'+escapeHtml(w.clue)+'</div>').join('');
+  $('cluesA').innerHTML = mk('A'); $('cluesD').innerHTML = mk('D');
+  document.querySelectorAll('.clue').forEach(el=>el.addEventListener('click', ()=>selectWord(+el.dataset.wi, true)));
+}
+function onCell(r,c){
+  const ws = cover[key(r,c)]||[];
+  if(!ws.length) return;
+  if(selWi>=0 && ws.includes(selWi) && ws.length>1){ selectWord(ws.find(i=>i!==selWi), true); }
+  else if(selWi>=0 && ws.includes(selWi)){ selectWord(selWi, true); }
+  else selectWord(ws[0], true);
+  selCell=[r,c]; markSel();
+}
+function selectWord(wi, focus){
+  selWi=wi;
+  const w=wordList[wi];
+  selCell = wordCells(w)[0];
+  markSel();
+  $('eclue').innerHTML = '<b>'+wordNum[wi]+(w.d==='A'?CFG.across:CFG.down)+'</b> '+escapeHtml(w.clue);
+  syncEntryField();
+  if(focus) $('entry').focus();
+}
+function markSel(){
+  document.querySelectorAll('.cell').forEach(el=>el.classList.remove('hl','cur'));
+  document.querySelectorAll('.clue').forEach(el=>el.classList.toggle('sel', +el.dataset.wi===selWi));
+  if(selWi<0) return;
+  wordCells(wordList[selWi]).forEach(([r,c])=>{
+    const cell=document.querySelector('.cell[data-r="'+r+'"][data-c="'+c+'"]');
+    if(cell) cell.classList.add('hl');
+  });
+  if(selCell){ const cell=document.querySelector('.cell[data-r="'+selCell[0]+'"][data-c="'+selCell[1]+'"]'); if(cell) cell.classList.add('cur'); }
+  const cl=$('clue-'+selWi); if(cl) cl.scrollIntoView({block:'nearest'});
+}
+function wordString(w){
+  return wordCells(w).map(([r,c])=> entry[key(r,c)]||'').join('');
+}
+function syncEntryField(){ if(selWi>=0) $('entry').value = wordString(wordList[selWi]); }
+function normalize(s){
+  s = s.replace(/\s+/g,'');
+  if(CFG.en) s = s.toUpperCase().replace(/[^A-Z]/g,'');
+  return [...s];
+}
+$('entry').addEventListener('input', ()=>{
+  if(selWi<0) return;
+  const w=wordList[selWi]; const cells=wordCells(w); const chars=normalize($('entry').value);
+  cells.forEach(([r,c],i)=>{
+    const k=key(r,c);
+    if(locked[k]) return;
+    entry[k] = chars[i]||'';
+    const cell=document.querySelector('.cell[data-r="'+r+'"][data-c="'+c+'"]');
+    if(cell) cell.classList.remove('ok','bad');
+  });
+  // keep locked letters visible at their positions in the field
+  if(cells.some(([r,c])=>locked[key(r,c)])) syncEntryField();
+  refreshCells(); saveProg(); updateBanner();
+});
+function isSolved(){ return Object.keys(sol).every(k=> entry[k]===sol[k]); }
+function updateBanner(){ $('banner').style.display = isSolved() ? 'block':'none'; }
+$('checkBtn').addEventListener('click', ()=>{
+  for(const k in sol){
+    const [r,c]=k.split(',').map(Number);
+    const cell=document.querySelector('.cell[data-r="'+r+'"][data-c="'+c+'"]');
+    if(!cell) continue;
+    cell.classList.remove('ok','bad');
+    if(entry[k]) cell.classList.add(entry[k]===sol[k] ? 'ok':'bad');
+  }
+  updateBanner();
+});
+function revealCells(list){
+  list.forEach(([r,c])=>{ const k=key(r,c); entry[k]=sol[k]; locked[k]=true; });
+  refreshCells(); syncEntryField(); saveProg(); updateBanner();
+}
+$('revLetterBtn').addEventListener('click', ()=>{
+  let target=null;
+  if(selCell){ const k=key(selCell[0],selCell[1]); if(entry[k]!==sol[k]) target=selCell; }
+  if(!target && selWi>=0){ const cs=wordCells(wordList[selWi]); target=cs.find(([r,c])=>entry[key(r,c)]!==sol[key(r,c)])||null; }
+  if(!target){ for(const k in sol){ if(entry[k]!==sol[k]){ target=k.split(',').map(Number); break; } } }
+  if(target) revealCells([target]);
+});
+$('revWordBtn').addEventListener('click', ()=>{ if(selWi>=0) revealCells(wordCells(wordList[selWi])); });
+$('revAllBtn').addEventListener('click', ()=>{ revealCells(Object.keys(sol).map(k=>k.split(',').map(Number))); });
+$('clearBtn').addEventListener('click', ()=>{
+  for(const k in sol) if(!locked[k]) entry[k]='';
+  document.querySelectorAll('.cell').forEach(el=>el.classList.remove('ok','bad'));
+  refreshCells(); syncEntryField(); saveProg(); updateBanner();
+});
+// picker
+const picker=$('picker');
+PUZZLES.forEach((p,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent='No. '+p.no+' · '+p.date+' · '+p.theme_line; picker.appendChild(o); });
+picker.value=pIdx;
+picker.addEventListener('change', ()=>{ pIdx=+picker.value; build(); });
+$('prevBtn').addEventListener('click', ()=>{ if(pIdx>0){ pIdx--; picker.value=pIdx; build(); } });
+$('nextBtn').addEventListener('click', ()=>{ if(pIdx<PUZZLES.length-1){ pIdx++; picker.value=pIdx; build(); } });
+build();
+</script>
+</body>
+</html>
