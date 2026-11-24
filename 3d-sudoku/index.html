@@ -1,0 +1,1012 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>3D 수도쿠</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2rem; }
+      * { box-sizing: border-box; }
+      :root {
+        --bg: #f4f1e8;
+        --panel: #fffdf6;
+        --panel-2: #efe9db;
+        --ink: #22303c;
+        --muted: #68778a;
+        --line: #ddd5c2;
+        --accent: #0e7569;
+        --accent-strong: #0a5c53;
+        --accent-soft: #d9efe9;
+        --amber: #c77400;
+        --amber-soft: #fbeed3;
+        --danger: #c0392b;
+        --stage: #e9e2cf;
+        --stage-line: #d8cfb6;
+        --off: #b9bfae;
+        --shadow: 0 10px 30px rgba(60, 50, 20, .12);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #10161a;
+          --panel: #182127;
+          --panel-2: #1f2a31;
+          --ink: #ece7d9;
+          --muted: #93a3ae;
+          --line: #2e3c44;
+          --accent: #2bb3a3;
+          --accent-strong: #5fd0c2;
+          --accent-soft: #173b37;
+          --amber: #f0a13c;
+          --amber-soft: #3d2f16;
+          --danger: #ff7a6b;
+          --stage: #131c21;
+          --stage-line: #22313a;
+          --off: #55606a;
+          --shadow: 0 10px 30px rgba(0,0,0,.45);
+        }
+      }
+      html, body { margin: 0; padding: 0; }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Pretendard Variable", Pretendard, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      main { max-width: 1180px; margin: 0 auto; padding: 18px 16px 40px; }
+
+      /* ── top stats bar ─────────────────────────── */
+      .topbar {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;
+        background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+        padding: 12px 16px; box-shadow: var(--shadow);
+      }
+      .topbar h1 { font-size: 20px; margin: 0; letter-spacing: -.02em; font-weight: 800; }
+      .topbar h1 small { display: block; font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: 0; margin-top: 2px; }
+      .stats { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; align-items: center; }
+      .stat {
+        background: var(--panel-2); border-radius: 10px; padding: 6px 12px; text-align: center; min-width: 74px;
+      }
+      .stat b { display: block; font-size: 16px; font-variant-numeric: tabular-nums; line-height: 1.15; }
+      .stat span { font-size: 11px; color: var(--muted); }
+      .top-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+      select {
+        font: inherit; font-size: 14px; color: var(--ink);
+        background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px; padding: 6px 10px; min-height: 38px;
+      }
+      .btn {
+        font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+        border-radius: 9px; border: 1px solid var(--line);
+        background: var(--panel-2); color: var(--ink); padding: 8px 14px; min-height: 38px;
+      }
+      .btn:hover { border-color: var(--accent); }
+      .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+      .btn.primary:hover { background: var(--accent-strong); }
+      @media (prefers-color-scheme: dark) { .btn.primary { color: #06231f; } }
+
+      /* ── layout ────────────────────────────────── */
+      .layout { display: grid; grid-template-columns: minmax(0,1fr) 348px; gap: 16px; margin-top: 16px; align-items: start; }
+      @media (max-width: 920px) { .layout { grid-template-columns: 1fr; } }
+
+      .stage-card {
+        background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+        box-shadow: var(--shadow); overflow: hidden;
+      }
+      .stage-tools {
+        display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center;
+        padding: 10px 14px; border-bottom: 1px solid var(--line);
+      }
+      .stage-tools .tool { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+      .stage-tools input[type="range"] { width: 130px; accent-color: var(--accent); min-height: 36px; }
+      .stage-tools .spacer { flex: 1; }
+      .mini-btn {
+        font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+        border: 1px solid var(--line); background: var(--panel-2); color: var(--ink);
+        border-radius: 8px; padding: 6px 12px; min-height: 36px;
+      }
+      .mini-btn[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-strong); }
+      #stage {
+        position: relative; height: min(60vh, 560px); min-height: 400px;
+        background:
+          linear-gradient(var(--stage-line) 1px, transparent 1px),
+          linear-gradient(90deg, var(--stage-line) 1px, transparent 1px),
+          var(--stage);
+        background-size: 34px 34px;
+        touch-action: none; cursor: grab; overflow: hidden;
+      }
+      #stage:active { cursor: grabbing; }
+      #stage canvas { display: block; }
+      .stage-hint {
+        position: absolute; left: 12px; bottom: 10px; font-size: 12px; color: var(--muted);
+        background: color-mix(in srgb, var(--panel) 82%, transparent);
+        padding: 5px 10px; border-radius: 999px; pointer-events: none;
+      }
+      .status-line {
+        min-height: 24px; padding: 10px 14px; font-size: 14px; border-top: 1px solid var(--line);
+        display: flex; align-items: center; gap: 8px;
+      }
+      .status-line .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); flex: none; }
+      .status-line.warn .dot { background: var(--danger); }
+
+      /* ── side panel ────────────────────────────── */
+      .panel {
+        background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+        box-shadow: var(--shadow); padding: 16px;
+      }
+      .panel + .panel { margin-top: 16px; }
+      .panel h2 { font-size: 14px; margin: 0 0 4px; font-weight: 800; }
+      .panel .sub { font-size: 12.5px; color: var(--muted); margin: 0 0 12px; line-height: 1.5; }
+      .selected-info {
+        display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+        background: var(--panel-2); border-radius: 10px; padding: 8px 12px; font-size: 13.5px;
+      }
+      .selected-info .big {
+        width: 38px; height: 38px; border-radius: 9px; background: var(--accent); color: #fff;
+        display: grid; place-items: center; font-size: 20px; font-weight: 800; flex: none;
+      }
+      @media (prefers-color-scheme: dark) { .selected-info .big { color: #06231f; } }
+      .selected-info .big.none { background: var(--off); font-size: 13px; }
+
+      .pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      .pad-btn {
+        position: relative; font: inherit; cursor: pointer; border-radius: 12px;
+        border: 2px solid var(--line); background: var(--panel); color: var(--ink);
+        padding: 10px 4px 8px; min-height: 64px;
+        display: flex; flex-direction: column; align-items: center; gap: 3px;
+        transition: border-color .12s, background .12s, opacity .12s;
+      }
+      .pad-btn .n { font-size: 24px; font-weight: 800; line-height: 1; }
+      .pad-btn .dots { font-size: 10px; letter-spacing: 2px; color: var(--muted); line-height: 1; }
+      .pad-btn:hover { border-color: var(--accent); }
+      .pad-btn.sel { border-color: var(--accent); background: var(--accent-soft); }
+      .pad-btn.sel .n { color: var(--accent-strong); }
+      .pad-btn.off { opacity: .34; cursor: not-allowed; border-style: dashed; }
+      .pad-btn.off:hover { border-color: var(--line); }
+      .pad-btn.done { opacity: .45; cursor: not-allowed; background: var(--panel-2); }
+      .pad-btn.done .n { text-decoration: line-through; }
+      .pad-btn .tag { font-size: 10px; color: var(--muted); }
+
+      .actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+      .act-btn {
+        font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; min-height: 48px;
+        border-radius: 11px; border: 1px solid var(--line); background: var(--panel-2); color: var(--ink);
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 6px 2px;
+      }
+      .act-btn small { font-size: 10.5px; font-weight: 500; color: var(--muted); }
+      .act-btn:hover { border-color: var(--accent); }
+      .act-btn:disabled { opacity: .4; cursor: not-allowed; }
+      .act-btn svg { width: 18px; height: 18px; }
+
+      .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+      .chip {
+        font-size: 12.5px; border: 1px solid var(--line); border-radius: 999px; padding: 5px 10px;
+        display: inline-flex; gap: 6px; align-items: center; background: var(--panel);
+        font-variant-numeric: tabular-nums;
+      }
+      .chip b { font-size: 13.5px; }
+      .chip .pips { letter-spacing: 1.5px; color: var(--accent); font-size: 10px; }
+      .chip.done { opacity: .42; }
+      .chip.done b { text-decoration: line-through; }
+
+      /* ── layers (2D) ───────────────────────────── */
+      .layers { display: none; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
+      .layers.show { display: flex; }
+      .layer { flex: 1 1 150px; }
+      .layer h3 { font-size: 12.5px; margin: 0 0 6px; color: var(--muted); font-weight: 700; text-align: center; }
+      .layer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+      .cell2d {
+        font: inherit; cursor: pointer; border-radius: 9px; border: 1.5px solid var(--line);
+        background: var(--panel); color: var(--ink); aspect-ratio: 1; min-height: 44px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2px;
+        position: relative;
+      }
+      .cell2d .v { font-size: 19px; font-weight: 800; line-height: 1; }
+      .cell2d.given { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+      .cell2d.user { color: var(--accent-strong); }
+      .cell2d .memos { font-size: 9.5px; color: var(--muted); line-height: 1.25; text-align: center; word-break: break-all; padding: 0 3px; }
+      .cell2d .memos em { font-style: normal; }
+      .cell2d .memos em.hot { color: var(--amber); font-weight: 900; }
+      .cell2d.peer { background: var(--accent-soft); }
+      .cell2d.same { border-color: var(--amber); background: var(--amber-soft); }
+      .cell2d.focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+      .cell2d.done-dim { opacity: .45; }
+
+      /* ── how to ────────────────────────────────── */
+      .howto { margin-top: 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; box-shadow: var(--shadow); }
+      .howto h2 { font-size: 15px; margin: 0 0 10px; }
+      .howto ul { margin: 0; padding-left: 18px; line-height: 1.75; font-size: 14px; }
+      .howto b { color: var(--accent-strong); }
+      .howto .rule { color: var(--muted); font-size: 13px; margin-top: 10px; line-height: 1.6; }
+
+      /* ── win overlay ───────────────────────────── */
+      .overlay {
+        position: fixed; inset: 0; background: rgba(10, 14, 16, .55);
+        display: none; align-items: center; justify-content: center; z-index: 50; padding: 16px;
+      }
+      .overlay.show { display: flex; }
+      .overlay .card {
+        background: var(--panel); color: var(--ink); border-radius: 16px; padding: 28px;
+        max-width: 380px; width: 100%; text-align: center; box-shadow: var(--shadow);
+      }
+      .overlay .card .cube-emoji { font-size: 0; }
+      .overlay h2 { margin: 0 0 6px; font-size: 24px; }
+      .overlay p { color: var(--muted); font-size: 14px; line-height: 1.6; margin: 0 0 18px; }
+      .overlay .row { display: flex; gap: 8px; justify-content: center; margin-bottom: 18px; }
+      .overlay .row .stat { flex: 1; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="topbar">
+        <h1>3D 수도쿠<small>3 × 3 × 3 큐브 · 27칸</small></h1>
+        <div class="stats">
+          <div class="stat"><b id="statProgress">0 / 27</b><span>진행</span></div>
+          <div class="stat"><b id="statTime">00:00</b><span>시간</span></div>
+          <div class="stat"><b id="statMistakes">0</b><span>실수</span></div>
+          <div class="stat"><b id="statHints">0</b><span>힌트</span></div>
+        </div>
+        <div class="top-actions">
+          <select id="difficulty" aria-label="난이도">
+            <option value="easy">쉬움</option>
+            <option value="normal" selected>보통</option>
+            <option value="hard">어려움</option>
+          </select>
+          <button class="btn primary" id="newGameBtn" type="button">새 게임</button>
+        </div>
+      </div>
+
+      <div class="layout">
+        <section class="stage-card" aria-label="3D 큐브">
+          <div class="stage-tools">
+            <span class="tool">
+              <label for="spread">펼침</label>
+              <input type="range" id="spread" min="1.02" max="2.1" step="0.02" value="1.3" />
+            </span>
+            <span class="tool">
+              <button class="mini-btn" id="layersBtn" type="button" aria-pressed="false">층별 보기</button>
+              <button class="mini-btn" id="spinBtn" type="button" aria-pressed="false">자동 회전</button>
+            </span>
+            <span class="spacer"></span>
+            <button class="mini-btn" id="resetViewBtn" type="button">시점 초기화</button>
+          </div>
+          <div id="stage">
+            <div class="stage-hint">드래그하면 큐브가 돌아갑니다 · 안쪽 칸은 펼침을 넓히거나 층별 보기를 쓰세요</div>
+          </div>
+          <div class="status-line" id="statusLine"><span class="dot"></span><span id="statusText">숫자가 있는 타일을 한 번 눌러 숫자를 선택하세요.</span></div>
+          <div style="padding: 0 14px 14px;">
+            <div class="layers" id="layers"></div>
+          </div>
+        </section>
+
+        <div>
+          <section class="panel" aria-label="숫자 패드">
+            <h2>숫자 패드</h2>
+            <p class="sub">선택한 칸에서 <b>이미 보이는 숫자는 패드에서 꺼지고</b>, 아직 안 보이는 숫자만 켜집니다. 세 개를 모두 찾은 숫자도 꺼집니다.</p>
+            <div class="selected-info">
+              <div class="big none" id="selBig">–</div>
+              <div id="selText">아직 선택한 숫자가 없습니다.<br />타일이나 패드를 눌러 숫자를 고르세요.</div>
+            </div>
+            <div class="pad" id="pad"></div>
+            <div class="actions">
+              <button class="act-btn" id="eraseBtn" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
+                지우기<small>선택한 칸 비우기</small>
+              </button>
+              <button class="act-btn" id="undoBtn" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
+                실행취소<small>한 단계 되돌리기</small>
+              </button>
+              <button class="act-btn" id="hintBtn" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+                힌트<small>정답 한 칸 열기</small>
+              </button>
+            </div>
+          </section>
+
+          <section class="panel" aria-label="숫자별 진행">
+            <h2>숫자별 진행</h2>
+            <p class="sub">숫자마다 큐브 전체에 3개씩 들어갑니다. 다 찾은 숫자는 흐리게 꺼집니다.</p>
+            <div class="chips" id="chips"></div>
+          </section>
+        </div>
+      </div>
+
+      <section class="howto">
+        <h2>노는 법</h2>
+        <ul>
+          <li><b>한 번 클릭</b> — 숫자가 있는 타일을 누르면 그 숫자가 선택됩니다. 빈 타일을 누르면 이전에 선택한 숫자가 <b>메모</b>로 적힙니다(다시 누르면 지워집니다).</li>
+          <li><b>더블클릭</b> — 빈 타일을 두 번 빠르게 누르면 선택한 숫자가 그 칸에 <b>확정</b>됩니다. 정답이 아니면 실수로 기록됩니다.</li>
+          <li><b>숫자 패드</b> — 선택한 칸의 가로·세로·높이 줄과 면에 이미 보이는 숫자는 꺼지고, 보이지 않는 숫자만 켜집니다. 패드에서 눌러 숫자를 고를 수도 있습니다.</li>
+          <li><b>강조 표시</b> — 선택한 숫자와 같은 확정 타일, 그리고 그 숫자가 메모된 타일이 주황색으로 강조됩니다. 다 찾은 숫자의 타일은 자동으로 꺼집니다.</li>
+          <li>키보드: <b>1–9</b> 숫자 선택 · <b>Backspace</b> 지우기 · <b>Ctrl/⌘+Z</b> 실행취소</li>
+        </ul>
+        <p class="rule">규칙 — 큐브를 어느 방향으로 잘라도 나오는 3×3 면 9칸에 1부터 9까지가 한 번씩 들어갑니다. 즉 가로줄·세로줄·높이줄과 세 방향의 모든 면에서 숫자가 겹치면 안 됩니다. 검은 타일은 처음부터 주어진 숫자라 지울 수 없습니다.</p>
+      </section>
+    </main>
+
+    <div class="overlay" id="winOverlay" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+      <div class="card">
+        <h2 id="winTitle">큐브 완성!</h2>
+        <p>27칸을 모두 채웠습니다.<br />세 방향 어느 면으로 잘라도 1–9가 한 번씩 들어가요.</p>
+        <div class="row">
+          <div class="stat"><b id="winTime">00:00</b><span>시간</span></div>
+          <div class="stat"><b id="winMistakes">0</b><span>실수</span></div>
+          <div class="stat"><b id="winHints">0</b><span>힌트</span></div>
+        </div>
+        <button class="btn primary" id="winNewBtn" type="button" style="width:100%; min-height:46px;">새 게임 시작</button>
+      </div>
+    </div>
+
+<script>
+"use strict";
+/* ═══════════ 3×3×3 큐브 수도쿠 ═══════════
+   규칙: x·y·z 어느 방향으로 자른 3×3 면(총 9개)마다 1–9가 한 번씩.
+   정답 큐브는 u=(x+y+z)%3, v=(x+2y)%3 → 값 = u+3v+1 공식을
+   축 순열·좌표 순열·숫자 순열로 섞어 만들고,
+   칸을 지울 때마다 백트래킹으로 유일해를 검증한다.        */
+
+var N = 3, CELLS = 27;
+function idx(x, y, z) { return (z * N + y) * N + x; }
+function coords(i) { return [i % N, Math.floor(i / N) % N, Math.floor(i / (N * N))]; }
+
+/* 같은 면(슬라이스)을 공유하는 칸들 — 서로 겹치면 안 되는 그룹 */
+var SLICES = []; // 9개 면, 각 9칸
+for (var a = 0; a < 3; a++) for (var f = 0; f < 3; f++) {
+  var s = [];
+  for (var p = 0; p < 3; p++) for (var q = 0; q < 3; q++) {
+    if (a === 0) s.push(idx(f, p, q));
+    else if (a === 1) s.push(idx(p, f, q));
+    else s.push(idx(p, q, f));
+  }
+  SLICES.push(s);
+}
+var PEERS = []; // 칸별: 같은 면을 공유하는 다른 칸 집합
+for (var ci = 0; ci < CELLS; ci++) {
+  var set = {};
+  SLICES.forEach(function (sl) { if (sl.indexOf(ci) >= 0) sl.forEach(function (j) { if (j !== ci) set[j] = 1; }); });
+  PEERS.push(Object.keys(set).map(Number));
+}
+function visibleValues(i, values) {
+  var seen = {};
+  PEERS[i].forEach(function (j) { if (values[j]) seen[values[j]] = 1; });
+  return seen;
+}
+function candidatesFor(i, values) {
+  var seen = visibleValues(i, values), out = [];
+  for (var n = 1; n <= 9; n++) if (!seen[n]) out.push(n);
+  return out;
+}
+/* 유일해 검증: 해의 개수를 세되 2개에서 중단 */
+function countSolutions(values, limit) {
+  var v = values.slice(), count = 0;
+  (function bt() {
+    if (count >= limit) return;
+    var best = -1, bestCand = null;
+    for (var i = 0; i < CELLS; i++) {
+      if (v[i]) continue;
+      var c = candidatesFor(i, v);
+      if (c.length === 0) return;
+      if (!bestCand || c.length < bestCand.length) { best = i; bestCand = c; if (c.length === 1) break; }
+    }
+    if (best < 0) { count++; return; }
+    for (var k = 0; k < bestCand.length; k++) {
+      v[best] = bestCand[k]; bt(); v[best] = 0;
+      if (count >= limit) return;
+    }
+  })();
+  return count;
+}
+function shuffled(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; }
+  return a;
+}
+function makeSolution() {
+  var digitPerm = shuffled([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  var axisPerm = shuffled([0, 1, 2]);
+  var coordPerm = [shuffled([0, 1, 2]), shuffled([0, 1, 2]), shuffled([0, 1, 2])];
+  var sol = new Array(CELLS).fill(0);
+  for (var i = 0; i < CELLS; i++) {
+    var c = coords(i), t = [0, 0, 0];
+    for (var a = 0; a < 3; a++) t[axisPerm[a]] = coordPerm[a][c[a]];
+    var u = (t[0] + t[1] + t[2]) % 3, v = (t[0] + 2 * t[1]) % 3;
+    sol[i] = digitPerm[u + 3 * v];
+  }
+  return sol;
+}
+function makePuzzle(targetGivens) {
+  var sol = makeSolution(), giv = sol.slice(), left = CELLS;
+  var order = shuffled(Array.from({ length: CELLS }, function (_, i) { return i; }));
+  for (var k = 0; k < order.length && left > targetGivens; k++) {
+    var i = order[k], keep = giv[i];
+    giv[i] = 0;
+    if (countSolutions(giv, 2) !== 1) giv[i] = keep; else left--;
+  }
+  return { solution: sol, givens: giv };
+}
+
+/* ── 게임 상태 ── */
+var G = null;
+function freshGame(diff) {
+  var target = diff === "easy" ? 14 : diff === "hard" ? 8 : 11;
+  var p = makePuzzle(target);
+  G = {
+    solution: p.solution,
+    given: p.givens.map(function (v) { return v !== 0; }),
+    value: p.givens.slice(),          // 확정 숫자 (0 = 빈칸)
+    memos: Array.from({ length: CELLS }, function () { return {}; }),
+    hinted: {},
+    selectedNumber: null,
+    focus: -1,
+    history: [],
+    mistakes: 0, hints: 0,
+    seconds: 0, startedAt: Date.now(), elapsedBeforePause: 0, finished: false,
+    flash: {}                          // 칸 → 'error' | 'good'
+  };
+}
+function snapshot() {
+  return JSON.stringify({ value: G.value, memos: G.memos, hinted: G.hinted });
+}
+function pushHistory() {
+  G.history.push(snapshot());
+  if (G.history.length > 120) G.history.shift();
+}
+function restore(snap) {
+  var s = JSON.parse(snap);
+  G.value = s.value; G.memos = s.memos; G.hinted = s.hinted;
+}
+function foundCount(n) {
+  var c = 0;
+  for (var i = 0; i < CELLS; i++) if (G.value[i] === n) c++;
+  return c;
+}
+function placedCount() {
+  var c = 0;
+  for (var i = 0; i < CELLS; i++) if (G.value[i]) c++;
+  return c;
+}
+function isComplete(n) { return foundCount(n) === 3; }
+
+/* ── 상태 메시지 ── */
+var statusTimer = null;
+function say(msg, warn) {
+  var line = document.getElementById("statusLine");
+  document.getElementById("statusText").textContent = msg;
+  line.classList.toggle("warn", !!warn);
+  clearTimeout(statusTimer);
+  if (warn) statusTimer = setTimeout(function () { line.classList.remove("warn"); }, 2600);
+}
+
+/* ── 게임 동작 ── */
+function selectNumber(n, silent) {
+  G.selectedNumber = n;
+  if (!silent) say(n + "을(를) 선택했습니다. 빈 타일을 누르면 메모, 두 번 누르면 확정됩니다.");
+  render();
+}
+function singleTap(i) {
+  if (!G || G.finished) return;
+  G.focus = i;
+  if (G.value[i]) {
+    selectNumber(G.value[i]);
+    return;
+  }
+  if (G.selectedNumber == null) {
+    say("빈 타일입니다. 먼저 숫자가 있는 타일이나 숫자 패드에서 숫자를 선택하세요.");
+    render();
+    return;
+  }
+  var n = G.selectedNumber;
+  if (isComplete(n)) { say(n + "은(는) 이미 3개를 모두 찾았습니다.", true); render(); return; }
+  pushHistory();
+  if (G.memos[i][n]) delete G.memos[i][n];
+  else G.memos[i][n] = 1;
+  say(G.memos[i][n] ? "메모 " + n + "을(를) 적었습니다. 두 번 빠르게 누르면 확정됩니다."
+                     : "메모 " + n + "을(를) 지웠습니다.");
+  render();
+}
+function doubleTap(i) {
+  if (!G || G.finished) return;
+  G.focus = i;
+  if (G.value[i]) { selectNumber(G.value[i]); return; }
+  var n = G.selectedNumber;
+  if (n == null) { say("먼저 숫자를 선택한 뒤 빈 타일을 더블클릭하세요.", true); render(); return; }
+  if (isComplete(n)) { say(n + "은(는) 이미 3개를 모두 찾았습니다.", true); render(); return; }
+  confirmNumber(i, n, false);
+}
+function confirmNumber(i, n, viaHint) {
+  if (G.solution[i] !== n) {
+    G.mistakes++;
+    G.flash[i] = "error";
+    say("아닙니다. 그 칸은 " + n + "이(가) 아닙니다. (실수 " + G.mistakes + "회)", true);
+    render();
+    setTimeout(function () { delete G.flash[i]; render(); }, 650);
+    return false;
+  }
+  pushHistory();
+  G.value[i] = n;
+  G.memos[i] = {};
+  if (viaHint) G.hinted[i] = 1;
+  /* 같은 면의 다른 칸 메모에서 이 숫자 정리 */
+  PEERS[i].forEach(function (j) { if (G.memos[j][n]) delete G.memos[j][n]; });
+  G.flash[i] = "good";
+  setTimeout(function () { delete G.flash[i]; render(); }, 650);
+  if (isComplete(n)) say(n + " 3개를 모두 찾았습니다! 그 숫자 타일들은 이제 꺼집니다.");
+  else say(n + " 확정! (" + foundCount(n) + " / 3)");
+  render();
+  checkWin();
+  return true;
+}
+function eraseFocus() {
+  if (!G || G.finished) return;
+  var i = G.focus;
+  if (i < 0) { say("먼저 지울 타일을 선택하세요.", true); return; }
+  if (G.given[i]) { say("처음부터 주어진 숫자는 지울 수 없습니다.", true); return; }
+  if (G.value[i]) {
+    pushHistory();
+    G.value[i] = 0; delete G.hinted[i];
+    say("확정한 숫자를 지웠습니다.");
+  } else if (Object.keys(G.memos[i]).length) {
+    pushHistory();
+    G.memos[i] = {};
+    say("메모를 모두 지웠습니다.");
+  } else { say("이미 빈 타일입니다."); return; }
+  render();
+}
+function undo() {
+  if (!G || G.finished) return;
+  if (!G.history.length) { say("되돌릴 내역이 없습니다.", true); return; }
+  restore(G.history.pop());
+  say("한 단계 되돌렸습니다.");
+  render();
+}
+function useHint() {
+  if (!G || G.finished) return;
+  var i = (G.focus >= 0 && !G.value[G.focus]) ? G.focus : -1;
+  if (i < 0) {
+    var empty = [];
+    for (var k = 0; k < CELLS; k++) if (!G.value[k]) empty.push(k);
+    if (!empty.length) return;
+    i = empty[Math.floor(Math.random() * empty.length)];
+  }
+  G.focus = i;
+  G.hints++;
+  var n = G.solution[i];
+  G.selectedNumber = n;
+  if (confirmNumber(i, n, true)) say("힌트: 한 칸의 정답 " + n + "을(를) 열었습니다. (힌트 " + G.hints + "회)");
+}
+function checkWin() {
+  if (placedCount() === CELLS && !G.finished) {
+    G.finished = true;
+    document.getElementById("winTime").textContent = fmtTime(G.seconds);
+    document.getElementById("winMistakes").textContent = G.mistakes;
+    document.getElementById("winHints").textContent = G.hints;
+    document.getElementById("winOverlay").classList.add("show");
+    say("큐브 완성! 축하합니다.");
+  }
+}
+function fmtTime(s) {
+  var m = Math.floor(s / 60), ss = s % 60;
+  return (m < 10 ? "0" : "") + m + ":" + (ss < 10 ? "0" : "") + ss;
+}
+setInterval(function () {
+  if (G && !G.finished) {
+    G.seconds = Math.floor((Date.now() - G.startedAt) / 1000);
+    document.getElementById("statTime").textContent = fmtTime(G.seconds);
+  }
+}, 500);
+</script>
+
+<script>
+"use strict";
+/* ═══════════ 캔버스 3D 큐브 렌더링 (외부 라이브러리 없이 직접 투영) ═══════════ */
+var stageEl = document.getElementById("stage");
+var view, vctx, viewW = 0, viewH = 0, DPR = 1;
+var targetRotX = -0.5, targetRotY = 0.65, curRotX = -0.5, curRotY = 0.65;
+var spreadVal = 1.3, autoSpin = false;
+var cellCanvas = [], cellPos = [], targetPos = [], hitFaces = [];
+var DARK = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+function tileColors(i) {
+  /* 상태별 타일 색상 (캔버스 텍스처용) */
+  var v = G.value[i], n = G.selectedNumber;
+  var base;
+  if (G.flash[i] === "error") base = { bg: "#c0392b", fg: "#ffffff", memo: "#ffd9d2" };
+  else if (G.flash[i] === "good") base = { bg: "#1d9e75", fg: "#ffffff", memo: "#d2f2e4" };
+  else if (v && isComplete(v)) base = { bg: DARK ? "#39424a" : "#c9c4b4", fg: DARK ? "#8b96a0" : "#8a8474", memo: "#999999" };
+  else if (v && n === v) base = { bg: "#e8930c", fg: "#ffffff", memo: "#ffe1ae" };
+  else if (G.given[i]) base = { bg: DARK ? "#0d1114" : "#26313c", fg: DARK ? "#f2ede0" : "#ffffff", memo: "#aaaaaa" };
+  else if (v) base = { bg: DARK ? "#0d4f45" : "#0e7569", fg: "#ffffff", memo: "#bfe8df" };
+  else if (n != null && G.memos[i][n]) base = { bg: DARK ? "#4a3410" : "#fbeed3", fg: "#22303c", memo: DARK ? "#d8c491" : "#7a6a4d" };
+  else if (G.focus === i) base = { bg: DARK ? "#1d3038" : "#eef6f3", fg: "#22303c", memo: DARK ? "#9db4ac" : "#68778a" };
+  else if (G.focus >= 0 && PEERS[G.focus].indexOf(i) >= 0 && !G.value[G.focus])
+    base = { bg: DARK ? "#233038" : "#e3ede8", fg: "#22303c", memo: DARK ? "#93a8a0" : "#68778a" };
+  else base = { bg: DARK ? "#2a343c" : "#f7f3e8", fg: "#22303c", memo: DARK ? "#9fb0a8" : "#68778a" };
+  if (!G.given[i] && !v) base.fg = DARK ? "#ece7d9" : "#22303c";
+  return base;
+}
+function drawTile(i) {
+  var cv = cellCanvas[i], ctx = cv.getContext("2d"), S = 256;
+  var col = tileColors(i), v = G.value[i], n = G.selectedNumber;
+  ctx.clearRect(0, 0, S, S);
+  ctx.fillStyle = col.bg;
+  ctx.beginPath();
+  var r = 26;
+  ctx.moveTo(r, 4); ctx.lineTo(S - r, 4); ctx.quadraticCurveTo(S - 4, 4, S - 4, r);
+  ctx.lineTo(S - 4, S - r); ctx.quadraticCurveTo(S - 4, S - 4, S - r, S - 4);
+  ctx.lineTo(r, S - 4); ctx.quadraticCurveTo(4, S - 4, 4, S - r);
+  ctx.lineTo(4, r); ctx.quadraticCurveTo(4, 4, r, 4); ctx.fill();
+  ctx.lineWidth = G.focus === i ? 14 : 5;
+  ctx.strokeStyle = G.focus === i ? "#0e7569" : (DARK ? "rgba(0,0,0,.55)" : "rgba(60,50,30,.35)");
+  ctx.stroke();
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  if (v) {
+    ctx.fillStyle = col.fg;
+    ctx.font = "800 148px 'Pretendard Variable', Pretendard, sans-serif";
+    ctx.fillText(String(v), S / 2, S / 2 + 6);
+    if (G.hinted[i] && !G.given[i]) {
+      ctx.font = "700 25px Pretendard, sans-serif";
+      ctx.fillStyle = DARK ? "#f0a13c" : "#c77400";
+      ctx.fillText("힌트", S / 2, S - 30);
+    }
+  } else {
+    var memos = G.memos[i];
+    ctx.font = "700 44px 'Pretendard Variable', Pretendard, sans-serif";
+    for (var d = 1; d <= 9; d++) {
+      if (!memos[d]) continue;
+      var mx = ((d - 1) % 3) * (S / 3) + S / 6, my = Math.floor((d - 1) / 3) * (S / 3) + S / 6;
+      if (n === d) {
+        ctx.fillStyle = "#e8930c";
+        ctx.beginPath(); ctx.arc(mx, my, 34, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#ffffff";
+      } else ctx.fillStyle = col.memo;
+      ctx.fillText(String(d), mx, my + 2);
+    }
+  }
+}
+/* 회전: v' = Rx(rotX) · Ry(rotY) · v */
+function rot3(p, cx, sx, cy, sy) {
+  var x = p[0] * cy + p[2] * sy;
+  var z = -p[0] * sy + p[2] * cy;
+  var y2 = p[1] * cx - z * sx;
+  var z2 = p[1] * sx + z * cx;
+  return [x, y2, z2];
+}
+var FACES = [
+  { n: [0, 0, 1],  u: [1, 0, 0],  v: [0, 1, 0] },
+  { n: [0, 0, -1], u: [-1, 0, 0], v: [0, 1, 0] },
+  { n: [1, 0, 0],  u: [0, 0, -1], v: [0, 1, 0] },
+  { n: [-1, 0, 0], u: [0, 0, 1],  v: [0, 1, 0] },
+  { n: [0, 1, 0],  u: [1, 0, 0],  v: [0, 0, -1] },
+  { n: [0, -1, 0], u: [1, 0, 0],  v: [0, 0, 1] }
+];
+function drawFace(i, pts, nz, dim) {
+  var ctx = vctx;
+  ctx.save();
+  if (dim) ctx.globalAlpha = 0.5;
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], pts[0][1]);
+  ctx.lineTo(pts[1][0], pts[1][1]);
+  ctx.lineTo(pts[2][0], pts[2][1]);
+  ctx.lineTo(pts[3][0], pts[3][1]);
+  ctx.closePath();
+  ctx.clip();
+  var x0 = pts[0][0], y0 = pts[0][1];
+  var ax = pts[1][0] - x0, ay = pts[1][1] - y0;
+  var bx = pts[3][0] - x0, by = pts[3][1] - y0;
+  ctx.setTransform(DPR * ax / 256, DPR * ay / 256, DPR * bx / 256, DPR * by / 256, DPR * x0, DPR * y0);
+  ctx.drawImage(cellCanvas[i], 0, 0);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = "rgba(8,10,18," + ((1 - nz) * 0.30).toFixed(3) + ")";
+  ctx.fillRect(-4, -4, viewW + 8, viewH + 8);
+  ctx.restore();
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], pts[0][1]);
+  ctx.lineTo(pts[1][0], pts[1][1]);
+  ctx.lineTo(pts[2][0], pts[2][1]);
+  ctx.lineTo(pts[3][0], pts[3][1]);
+  ctx.closePath();
+  ctx.strokeStyle = DARK ? "rgba(0,0,0,.65)" : "rgba(70,60,35,.5)";
+  ctx.lineWidth = 1.1;
+  ctx.stroke();
+}
+function drawScene() {
+  if (!vctx || !viewW) return;
+  vctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  vctx.clearRect(0, 0, viewW, viewH);
+  var cx = Math.cos(curRotX), sx = Math.sin(curRotX), cy = Math.cos(curRotY), sy = Math.sin(curRotY);
+  var scale = Math.min(viewW, viewH) / (2.3 * spreadVal + 3.1);
+  var ox = viewW / 2, oy = viewH / 2, H = 0.47;
+  var order = [];
+  for (var i = 0; i < CELLS; i++) order.push({ i: i, c: rot3(cellPos[i], cx, sx, cy, sy) });
+  order.sort(function (a, b) { return a.c[2] - b.c[2]; });
+  hitFaces = [];
+  order.forEach(function (o) {
+    var i = o.i, center = o.c;
+    var dim = !!(G.value[i] && isComplete(G.value[i]));
+    var fl = [];
+    FACES.forEach(function (f) {
+      var n = rot3(f.n, cx, sx, cy, sy);
+      if (n[2] <= 0.03) return;
+      var u = rot3(f.u, cx, sx, cy, sy), v = rot3(f.v, cx, sx, cy, sy);
+      var fc = [center[0] + n[0] * H, center[1] + n[1] * H, center[2] + n[2] * H];
+      function pt(su, sv) {
+        return [ox + (fc[0] + u[0] * su * H + v[0] * sv * H) * scale,
+                oy - (fc[1] + u[1] * su * H + v[1] * sv * H) * scale];
+      }
+      fl.push({ nz: n[2], pts: [pt(-1, 1), pt(1, 1), pt(1, -1), pt(-1, -1)] });
+    });
+    fl.sort(function (a, b) { return a.nz - b.nz; });
+    fl.forEach(function (f) {
+      drawFace(i, f.pts, f.nz, dim);
+      hitFaces.push({ cell: i, pts: f.pts });
+    });
+  });
+}
+function initCanvas() {
+  view = document.createElement("canvas");
+  view.setAttribute("role", "img");
+  view.setAttribute("aria-label", "3×3×3 수도쿠 큐브");
+  stageEl.insertBefore(view, stageEl.firstChild);
+  vctx = view.getContext("2d");
+  for (var i = 0; i < CELLS; i++) {
+    var cv = document.createElement("canvas");
+    cv.width = cv.height = 256;
+    cellCanvas.push(cv);
+    cellPos.push([0, 0, 0]);
+  }
+  layoutCubes(true);
+  resizeView();
+  if (window.ResizeObserver) new ResizeObserver(resizeView).observe(stageEl);
+  window.addEventListener("resize", resizeView);
+  (function loop() {
+    requestAnimationFrame(loop);
+    if (autoSpin && !dragging) targetRotY += 0.005;
+    curRotX += (targetRotX - curRotX) * 0.18;
+    curRotY += (targetRotY - curRotY) * 0.18;
+    for (var k = 0; k < CELLS; k++) {
+      var t = targetPos[k], p = cellPos[k];
+      p[0] += (t[0] - p[0]) * 0.2;
+      p[1] += (t[1] - p[1]) * 0.2;
+      p[2] += (t[2] - p[2]) * 0.2;
+    }
+    drawScene();
+  })();
+}
+function layoutCubes(snap) {
+  for (var i = 0; i < CELLS; i++) {
+    var c = coords(i);
+    targetPos[i] = [(c[0] - 1) * spreadVal, (1 - c[1]) * spreadVal, (c[2] - 1) * spreadVal];
+    if (snap) cellPos[i] = targetPos[i].slice();
+  }
+}
+function resizeView() {
+  var w = stageEl.clientWidth, h = stageEl.clientHeight;
+  if (!w || !h) return;
+  viewW = w; viewH = h;
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  view.width = Math.round(w * DPR);
+  view.height = Math.round(h * DPR);
+  view.style.width = w + "px";
+  view.style.height = h + "px";
+}
+
+/* ── 포인터: 드래그 회전 vs 탭 구분, 탭 vs 더블탭 구분 ── */
+var dragging = false, downPos = null;
+var pendingTap = null, pendingTimer = null, lastTapCell = -1, lastTapAt = 0;
+function pointInPoly(x, y, pts) {
+  var inside = false;
+  for (var a = 0, b = pts.length - 1; a < pts.length; b = a++) {
+    var xi = pts[a][0], yi = pts[a][1], xj = pts[b][0], yj = pts[b][1];
+    if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) inside = !inside;
+  }
+  return inside;
+}
+function pickCell(ev) {
+  var rect = view.getBoundingClientRect();
+  var x = ev.clientX - rect.left, y = ev.clientY - rect.top;
+  for (var k = hitFaces.length - 1; k >= 0; k--) {
+    if (pointInPoly(x, y, hitFaces[k].pts)) return hitFaces[k].cell;
+  }
+  return -1;
+}
+function handleTap(i) {
+  if (i < 0) return;
+  var now = Date.now();
+  if (i === lastTapCell && now - lastTapAt < 330) {
+    clearTimeout(pendingTimer); pendingTap = null;
+    lastTapCell = -1;
+    doubleTap(i);
+    return;
+  }
+  lastTapCell = i; lastTapAt = now;
+  clearTimeout(pendingTimer);
+  pendingTap = i;
+  pendingTimer = setTimeout(function () {
+    if (pendingTap != null) singleTap(pendingTap);
+    pendingTap = null;
+  }, 330);
+}
+function bindPointer() {
+  var el = view;
+  el.style.touchAction = "none";
+  el.addEventListener("pointerdown", function (ev) {
+    dragging = false;
+    downPos = { x: ev.clientX, y: ev.clientY };
+    el.setPointerCapture(ev.pointerId);
+  });
+  el.addEventListener("pointermove", function (ev) {
+    if (!downPos) return;
+    var dx = ev.clientX - downPos.x, dy = ev.clientY - downPos.y;
+    if (!dragging && Math.hypot(dx, dy) > 7) dragging = true;
+    if (dragging) {
+      targetRotY += dx * 0.008;
+      targetRotX += dy * 0.008;
+      targetRotX = Math.max(-1.35, Math.min(1.35, targetRotX));
+      downPos = { x: ev.clientX, y: ev.clientY };
+    }
+  });
+  el.addEventListener("pointerup", function (ev) {
+    var wasDrag = dragging;
+    dragging = false; downPos = null;
+    if (!wasDrag) {
+      var i = pickCell(ev);
+      if (i >= 0) handleTap(i);
+    }
+  });
+  el.addEventListener("pointercancel", function () { dragging = false; downPos = null; });
+}
+
+/* ═══════════ UI 렌더링 ═══════════ */
+var padEl = document.getElementById("pad");
+var chipsEl = document.getElementById("chips");
+var layersEl = document.getElementById("layers");
+(function buildPad() {
+  for (var n = 1; n <= 9; n++) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "pad-btn"; b.dataset.n = n;
+    b.innerHTML = '<span class="n">' + n + '</span><span class="dots"></span><span class="tag"></span>';
+    (function (num, btn) { btn.addEventListener("click", function () { if (!btn.disabled) selectNumber(num); }); })(n, b);
+    padEl.appendChild(b);
+  }
+  for (var m = 1; m <= 9; m++) {
+    var c = document.createElement("span");
+    c.className = "chip"; c.dataset.n = m;
+    c.innerHTML = "<b>" + m + '</b><span class="pips"></span>';
+    chipsEl.appendChild(c);
+  }
+  var names = ["앞 층 (z=1)", "가운데 층 (z=2)", "뒤 층 (z=3)"];
+  for (var z = 0; z < 3; z++) {
+    var wrap = document.createElement("div");
+    wrap.className = "layer";
+    wrap.innerHTML = "<h3>" + names[z] + "</h3>";
+    var grid = document.createElement("div");
+    grid.className = "layer-grid";
+    for (var y = 0; y < 3; y++) for (var x = 0; x < 3; x++) {
+      var cell = document.createElement("button");
+      cell.type = "button"; cell.className = "cell2d"; cell.dataset.cell = idx(x, y, z);
+      (function (ci) {
+        cell.addEventListener("pointerup", function (ev) { ev.stopPropagation(); handleTap(ci); });
+      })(idx(x, y, z));
+      grid.appendChild(cell);
+    }
+    wrap.appendChild(grid);
+    layersEl.appendChild(wrap);
+  }
+})();
+function padState(n) {
+  /* {mode:'on'|'off'|'done', tag} — 보이는 숫자는 off, 다 찾으면 done */
+  if (isComplete(n)) return { mode: "done", tag: "완료" };
+  var f = G.focus;
+  if (f >= 0 && !G.value[f]) {
+    if (visibleValues(f, G.value)[n]) return { mode: "off", tag: "보임" };
+  }
+  return { mode: "on", tag: "" };
+}
+function render() {
+  if (!G) return;
+  for (var i = 0; i < CELLS; i++) drawTile(i);
+  /* 숫자 패드 */
+  var btns = padEl.children;
+  for (var n = 1; n <= 9; n++) {
+    var b = btns[n - 1], st = padState(n), fc = foundCount(n);
+    b.className = "pad-btn" + (st.mode !== "on" ? " " + st.mode : "") + (G.selectedNumber === n && st.mode === "on" ? " sel" : "");
+    b.disabled = st.mode !== "on";
+    b.querySelector(".dots").textContent = "●".repeat(fc) + "○".repeat(3 - fc);
+    b.querySelector(".tag").textContent = st.tag;
+    b.setAttribute("aria-label", "숫자 " + n + (st.mode === "done" ? " 완료" : st.mode === "off" ? " 선택한 칸에서 보임" : ""));
+  }
+  /* 선택 정보 */
+  var big = document.getElementById("selBig"), txt = document.getElementById("selText");
+  if (G.selectedNumber != null) {
+    big.textContent = G.selectedNumber; big.classList.remove("none");
+    txt.innerHTML = "선택한 숫자 <b>" + G.selectedNumber + "</b> · 찾은 개수 " + foundCount(G.selectedNumber) + " / 3<br />빈 타일 한 번 클릭 = 메모, 더블클릭 = 확정";
+  } else {
+    big.textContent = "–"; big.classList.add("none");
+    txt.innerHTML = "아직 선택한 숫자가 없습니다.<br />타일이나 패드를 눌러 숫자를 고르세요.";
+  }
+  /* 칩 */
+  var chips = chipsEl.children;
+  for (var m = 1; m <= 9; m++) {
+    var ch = chips[m - 1], fcm = foundCount(m);
+    ch.classList.toggle("done", fcm === 3);
+    ch.querySelector(".pips").textContent = "●".repeat(fcm) + "○".repeat(3 - fcm);
+  }
+  /* 통계 */
+  document.getElementById("statProgress").textContent = placedCount() + " / 27";
+  document.getElementById("statMistakes").textContent = G.mistakes;
+  document.getElementById("statHints").textContent = G.hints;
+  document.getElementById("undoBtn").disabled = !G.history.length;
+  /* 층별 보기 */
+  var cells2d = layersEl.querySelectorAll(".cell2d");
+  cells2d.forEach(function (el) {
+    var ci = +el.dataset.cell, v = G.value[ci], n = G.selectedNumber;
+    el.className = "cell2d";
+    if (G.given[ci]) el.classList.add("given");
+    else if (v) el.classList.add("user");
+    if (v && n === v) el.classList.add("same");
+    if (!v && n != null && G.memos[ci][n]) el.classList.add("same");
+    if (!v && G.focus >= 0 && G.focus !== ci && PEERS[G.focus].indexOf(ci) >= 0) el.classList.add("peer");
+    if (G.focus === ci) el.classList.add("focus");
+    if (v && isComplete(v)) el.classList.add("done-dim");
+    if (v) el.innerHTML = '<span class="v">' + v + "</span>";
+    else {
+      var ms = Object.keys(G.memos[ci]).map(Number).sort();
+      el.innerHTML = ms.length
+        ? '<span class="memos">' + ms.map(function (d) { return d === n ? "<em class='hot'>" + d + "</em>" : "<em>" + d + "</em>"; }).join(" ") + "</span>"
+        : '<span class="v" style="opacity:.25">·</span>';
+    }
+    el.setAttribute("aria-label", "칸 " + (ci + 1) + (v ? " 숫자 " + v : " 빈칸"));
+  });
+}
+
+/* ═══════════ 컨트롤 연결 ═══════════ */
+function newGame() {
+  var diff = document.getElementById("difficulty").value;
+  freshGame(diff);
+  document.getElementById("winOverlay").classList.remove("show");
+  document.getElementById("statTime").textContent = "00:00";
+  say("새 게임! 숫자가 있는 타일을 한 번 눌러 숫자를 선택하세요.");
+  render();
+}
+document.getElementById("newGameBtn").addEventListener("click", newGame);
+document.getElementById("winNewBtn").addEventListener("click", newGame);
+document.getElementById("difficulty").addEventListener("change", newGame);
+document.getElementById("eraseBtn").addEventListener("click", eraseFocus);
+document.getElementById("undoBtn").addEventListener("click", undo);
+document.getElementById("hintBtn").addEventListener("click", useHint);
+document.getElementById("resetViewBtn").addEventListener("click", function () {
+  targetRotX = -0.5; targetRotY = 0.65;
+});
+document.getElementById("spread").addEventListener("input", function (ev) {
+  spreadVal = parseFloat(ev.target.value);
+  layoutCubes(false);
+});
+document.getElementById("layersBtn").addEventListener("click", function () {
+  var on = layersEl.classList.toggle("show");
+  this.setAttribute("aria-pressed", on ? "true" : "false");
+});
+document.getElementById("spinBtn").addEventListener("click", function () {
+  autoSpin = !autoSpin;
+  this.setAttribute("aria-pressed", autoSpin ? "true" : "false");
+});
+document.addEventListener("keydown", function (ev) {
+  if (!G || G.finished) return;
+  if (ev.target && (ev.target.tagName === "SELECT" || ev.target.tagName === "INPUT")) return;
+  if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "z") { ev.preventDefault(); undo(); return; }
+  if (/^[1-9]$/.test(ev.key)) {
+    var n = +ev.key;
+    if (!isComplete(n)) selectNumber(n);
+  }
+  if (ev.key === "Backspace" || ev.key === "Delete") { ev.preventDefault(); eraseFocus(); }
+});
+
+/* 시작 */
+freshGame("normal");
+initCanvas();
+bindPointer();
+render();
+</script>
+</body>
+</html>
