@@ -1,0 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,700;1,6..72,400&family=Noto+Sans+KR:wght@400;500;700;900&family=Noto+Serif+KR:wght@400;600;700;900&display=swap');
+@import "tailwindcss";
+@import "tailwindcss-safe-area";
+
+@theme {
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --text-sm: 14px;
+  --text-sm--line-height: 20px;
+  --text-base: 16px;
+  --text-base--line-height: 24px;
+  --text-lg: 18px;
+  --text-lg--line-height: 28px;
+  --text-xl: 20px;
+  --text-xl--line-height: 28px;
+  --text-2xl: 24px;
+  --text-2xl--line-height: 32px;
+  --text-3xl: 30px;
+  --text-3xl--line-height: 36px;
+  --text-4xl: 36px;
+  --text-4xl--line-height: 40px;
+  --text-5xl: 48px;
+  --text-5xl--line-height: 52px;
+}
+
+:root {
+  color-scheme: light;
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --text: #111111;
+  --dim: #55534e;
+  --border: #d9d6d0;
+  --accent: #c8102e;
+  --radius: 0px;
+  --space-surface: var(--surface);
+  --space-surface-alt: #f7f5f1;
+  --space-muted: var(--dim);
+  --space-border: var(--border);
+  --space-accent: var(--accent);
+  --paper: #ffffff;
+  --ink: #111111;
+  --red: #c8102e;
+  --hl: #fdeec9;
+  --hl-strong: #f9d976;
+  --wrong: #c8102e;
+}
+
+@layer base {
+  button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) {
+    min-height: 2rem;
+  }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Noto Sans KR", "Libre Franklin", system-ui, sans-serif;
+  }
+}
+
+.font-serif-kr { font-family: "Noto Serif KR", "Newsreader", serif; }
+.font-sans-kr { font-family: "Noto Sans KR", "Libre Franklin", system-ui, sans-serif; }
+.font-latin { font-family: "Libre Franklin", "Noto Sans KR", sans-serif; }
+
+.paper-texture {
+  background-color: #ffffff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+}
+
+.double-rule { border-top: 3px double #111; }
+.rule-top { border-top: 1px solid #111; }
+.rule-bottom { border-bottom: 1px solid #111; }

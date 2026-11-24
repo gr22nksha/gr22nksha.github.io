@@ -1,0 +1,8 @@
+{
+  "entry": "client/dist/index.html",
+  "managedCronJobs": [],
+  "name": "Chae's Daily Crossword",
+  "platformVersion": 28,
+  "runtime": "typescript",
+  "slug": "chae-s-daily-crossword"
+}
